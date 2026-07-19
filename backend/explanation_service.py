@@ -33,7 +33,7 @@ Rezultati analize:
 Napisi kratko, jasno obrazlozenje (3-5 recenica) za brend menadzera koji odlucuje
 da li da sarađuje sa ovim kreatorom. Fokusiraj se na najvaznije nalaze i konkretnu preporuku.
 Piši na srpskom/crnogorskom jeziku, poslovnim ali razumljivim tonom.
-Koristi iskljucivo srpska/crnogorska slova i rijeci - bez mijesanja sa drugim jezicima ili pismima.""
+Koristi iskljucivo srpska/crnogorska slova i rijeci - bez mijesanja sa drugim jezicima ili pismima."""
 
     response = client.messages.create(
         model=MODEL,
