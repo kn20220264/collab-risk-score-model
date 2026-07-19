@@ -101,6 +101,49 @@ def get_videos_stats(video_ids: list) -> list:
     return videos
 
 
+def get_video_comments(video_id: str, max_results: int = 50) -> list:
+    """
+    Vraca listu komentara (tekst) za dati video.
+    Ako su komentari onemoguceni na videu, vraca praznu listu.
+    """
+    comments = []
+    try:
+        request = youtube.commentThreads().list(
+            part="snippet",
+            videoId=video_id,
+            maxResults=max_results,
+            order="relevance",
+            textFormat="plainText"
+        )
+        response = request.execute()
+
+        for item in response["items"]:
+            comment_text = item["snippet"]["topLevelComment"]["snippet"]["textDisplay"]
+            like_count = item["snippet"]["topLevelComment"]["snippet"]["likeCount"]
+            comments.append({
+                "text": comment_text,
+                "like_count": like_count
+            })
+
+    except Exception as e:
+        # Komentari mogu biti onemoguceni na videu, ili druga greska - ne prekidamo ceo proces
+        print(f"  (Napomena: komentari nisu dostupni za video {video_id}: {e})")
+
+    return comments
+
+
+def get_comments_for_videos(video_ids: list, max_per_video: int = 30) -> list:
+    """
+    Prikuplja komentare za listu videa i vraca ih kao jednu spojenu listu.
+    """
+    all_comments = []
+    for video_id in video_ids:
+        comments = get_video_comments(video_id, max_results=max_per_video)
+        all_comments.extend(comments)
+    return all_comments
+
+
+
 
 # Brzi test — pokreni ovaj fajl direktno da provjeriš da radi
 if __name__ == "__main__":
@@ -115,3 +158,8 @@ if __name__ == "__main__":
     print("STATISTIKE VIDEA:")
     for v in videos:
         print(v)
+
+    comments = get_comments_for_videos(video_ids, max_per_video=10)
+    print(f"\nPRIKUPLJENO KOMENTARA: {len(comments)}")
+    for c in comments[:5]:
+        print(f"  - ({c['like_count']} lajkova) {c['text'][:80]}")
