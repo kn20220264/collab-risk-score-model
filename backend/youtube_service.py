@@ -80,9 +80,19 @@ def get_videos_stats(video_ids: list) -> list:
     """
     Vraća detaljne statistike (pregledi, lajkovi, komentari, datum) za listu video ID-jeva.
     YouTube API dozvoljava do 50 ID-jeva po pozivu.
+
+    NIVO 1 OBOGACIVANJE SADRZAJNOG PROFILA (dodano za brand-fit modul):
+    Uz osnovne statistike, sada se povlace i:
+    - 'tags': kljucne rijeci koje kreator sam dodaje videu (SEO/kategorizacija,
+      cesto precizniji signal teme videa nego naslov)
+    - 'topic_categories': Wikipedia URL-ovi tema koje YOUTUBE SAM dodjeljuje
+      videu (part='topicDetails') - eksterna, standardizovana kategorizacija,
+      ne kreatorov subjektivan izbor rijeci. Ova polja se koriste u
+      brand_fit.py da obogate sadrzajni profil kanala prije racunanja
+      cosine similarity sa opisom brenda.
     """
     request = youtube.videos().list(
-        part="snippet,statistics",
+        part="snippet,statistics,topicDetails",
         id=",".join(video_ids)
     )
     response = request.execute()
@@ -90,6 +100,9 @@ def get_videos_stats(video_ids: list) -> list:
     videos = []
     for item in response["items"]:
         stats = item["statistics"]
+        topic_categories_raw = item.get("topicDetails", {}).get("topicCategories", [])
+        topic_categories = [url.rsplit("/", 1)[-1].replace("_", " ") for url in topic_categories_raw]
+
         videos.append({
             "video_id": item["id"],
             "title": item["snippet"]["title"],
@@ -97,6 +110,8 @@ def get_videos_stats(video_ids: list) -> list:
             "view_count": int(stats.get("viewCount", 0)),
             "like_count": int(stats.get("likeCount", 0)),
             "comment_count": int(stats.get("commentCount", 0)),
+            "tags": item["snippet"].get("tags", []),
+            "topic_categories": topic_categories,
         })
     return videos
 
