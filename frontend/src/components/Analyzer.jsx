@@ -1,62 +1,7 @@
 import { useState } from "react";
+import CreatorProfileCard from "./CreatorProfileCard";
 
 const API_BASE = "http://127.0.0.1:8000/api/v1/creators/youtube";
-
-const RISK_COLORS = {
-  "Nizak rizik": "#4fae7c",
-  "Srednji rizik": "#e8a33d",
-  "Visok rizik": "#e2554c",
-};
-
-function ScoreGauge({ score, category }) {
-  const r = 80;
-  const circumference = Math.PI * r;
-  const offset = circumference * (1 - score / 100);
-  const color = RISK_COLORS[category] || "#8b93a1";
-
-  return (
-    <div className="gauge-wrap">
-      <svg viewBox="0 0 200 110" className="gauge">
-        <path
-          d="M20,100 A80,80 0 0 1 180,100"
-          fill="none"
-          stroke="#2a303c"
-          strokeWidth="14"
-          strokeLinecap="round"
-        />
-        <path
-          d="M20,100 A80,80 0 0 1 180,100"
-          fill="none"
-          stroke={color}
-          strokeWidth="14"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          className="gauge-fill"
-        />
-      </svg>
-      <div className="gauge-score">
-        <span className="gauge-number">{score}</span>
-        <span className="gauge-max">/100</span>
-      </div>
-      <div className="gauge-category" style={{ color }}>
-        {category}
-      </div>
-    </div>
-  );
-}
-
-function ModuleBar({ label, value }) {
-  return (
-    <div className="module-row">
-      <div className="module-label">{label}</div>
-      <div className="module-track">
-        <div className="module-fill" style={{ width: `${value}%` }} />
-      </div>
-      <div className="module-value">{value}</div>
-    </div>
-  );
-}
 
 function Analyzer() {
   const [handle, setHandle] = useState("");
@@ -146,15 +91,6 @@ function Analyzer() {
 
         {result && (
           <div className="results">
-            <div className="channel-line">
-              <strong>{result.display_name}</strong>
-              <span>
-                {result.subscriber_count.toLocaleString()}{" "}
-                pretplatnika · {result.video_count.toLocaleString()}{" "}
-                videa
-              </span>
-            </div>
-
             {result.brand_description_auto_generated && (
               <div className="status-note">
                 Opis brenda automatski generisan istraživanjem naziva "
@@ -162,42 +98,7 @@ function Analyzer() {
               </div>
             )}
 
-            <div className="results-grid">
-              <div className="card gauge-card">
-                <ScoreGauge score={result.score} category={result.risk_category} />
-                {result.triggered_risk_flags.length > 0 && (
-                  <div className="caps-warning">
-                    <div className="caps-title">Kriticni nalazi</div>
-                    {result.triggered_risk_flags.map((cap, i) => (
-                      <div key={i} className="cap-item">
-                        {cap}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="card modules-card">
-                <div className="card-title">Skorovi po modulima</div>
-                <ModuleBar
-                  label="Kvantitativne metrike"
-                  value={result.modules.quantitative}
-                />
-                <ModuleBar
-                  label="Autenticnost"
-                  value={result.modules.authenticity}
-                />
-                <ModuleBar label="Sentiment" value={result.modules.sentiment} />
-                <ModuleBar label="Brand-fit" value={result.modules.brand_fit} />
-              </div>
-            </div>
-
-            {result.ai_explanation && (
-              <div className="card explanation-card">
-                <div className="card-title">AI obrazlozenje</div>
-                <p className="explanation-text">{result.ai_explanation}</p>
-              </div>
-            )}
+            <CreatorProfileCard creator={result} />
           </div>
         )}
       </div>

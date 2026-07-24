@@ -37,10 +37,18 @@ def get_channel_stats(handle: str) -> dict:
     response = request.execute()
     item = response["items"][0]
 
+    thumbnails = item["snippet"].get("thumbnails", {})
+    thumbnail_url = (
+        thumbnails.get("high", {}).get("url")
+        or thumbnails.get("medium", {}).get("url")
+        or thumbnails.get("default", {}).get("url")
+    )
+
     return {
         "channel_id": channel_id,
         "title": item["snippet"]["title"],
         "description": item["snippet"]["description"],
+        "thumbnail_url": thumbnail_url,
         "subscriber_count": int(item["statistics"].get("subscriberCount", 0)),
         "video_count": int(item["statistics"].get("videoCount", 0)),
         "view_count": int(item["statistics"].get("viewCount", 0)),
