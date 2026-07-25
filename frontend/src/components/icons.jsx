@@ -80,3 +80,7 @@ export const IconClock = icon(
 );
 
 export const IconCheck = icon(<path d="M4 12l5 5L20 6" />);
+
+export const IconHeart = icon(
+  <path d="M12 20.5s-7.5-4.6-10-9.2C.5 8 2 4.5 5.5 4c2-.3 3.7.6 4.9 2.1L12 7.8l1.6-1.7C14.8 4.6 16.5 3.7 18.5 4c3.5.5 5 4 3.5 7.3-2.5 4.6-10 9.2-10 9.2Z" />
+);

@@ -220,7 +220,7 @@ if __name__ == "__main__":
     stats = get_channel_stats(handle)
     video_ids = get_recent_video_ids(stats["channel_id"], max_results=20)
     videos = get_videos_stats(video_ids)
-    transcripts = get_transcripts_for_videos(video_ids, max_videos=6, max_words_per_video=50)
+    transcripts = get_transcripts_for_videos(video_ids, max_videos=12, max_words_per_video=350)
 
     result = analyze_creator_content(stats, videos, transcripts)
     print(json.dumps(result, indent=2, ensure_ascii=False))
