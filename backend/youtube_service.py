@@ -91,6 +91,14 @@ def get_videos_stats(video_ids: list) -> list:
 
     NIVO 1 OBOGACIVANJE SADRZAJNOG PROFILA (dodano za brand-fit modul):
     Uz osnovne statistike, sada se povlace i:
+    - 'description': pun opis videa (YouTube Data API, snippet.description).
+      Dodano kao robusniji, zvanican-API-baziran izvor sadrzaja koji NE
+      zavisi od dostupnosti transkripata (za razliku od Nivo 2 - vidi
+      transcript_service.py, koja koristi neslužbenu biblioteku sklonu
+      povremenom neuspjehu za odredjene kanale). Opisi video-a cesto
+      sadrze detaljne sazetke, pominjanja proizvoda/brendova i linkove,
+      slicno bogatstvu sadrzaja kao transkript, ali dolaze kroz zvanican
+      API poziv i dostupni su za 100% video-a, ne samo 6 najnovijih.
     - 'tags': kljucne rijeci koje kreator sam dodaje videu (SEO/kategorizacija,
       cesto precizniji signal teme videa nego naslov)
     - 'topic_categories': Wikipedia URL-ovi tema koje YOUTUBE SAM dodjeljuje
@@ -114,6 +122,7 @@ def get_videos_stats(video_ids: list) -> list:
         videos.append({
             "video_id": item["id"],
             "title": item["snippet"]["title"],
+            "description": item["snippet"].get("description", ""),
             "published_at": item["snippet"]["publishedAt"],
             "view_count": int(stats.get("viewCount", 0)),
             "like_count": int(stats.get("likeCount", 0)),

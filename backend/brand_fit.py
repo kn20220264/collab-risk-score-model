@@ -50,12 +50,16 @@ def cosine_similarity(vec_a: list, vec_b: list) -> float:
 
 def build_channel_content_summary(channel_stats: dict, videos: list, transcripts: dict = None) -> str:
     """
-    Spaja opis kanala, naslove videa, tagove, teme (topic categories) i
-    (opciono) transkript-isjecke u jedan tekst koji predstavlja
-    'sadrzajni profil' kanala, spreman za embedding.
+    Spaja opis kanala, naslove videa, opise videa, tagove, teme (topic
+    categories) i (opciono) transkript-isjecke u jedan tekst koji
+    predstavlja 'sadrzajni profil' kanala, spreman za embedding.
 
     NIVO 1 OBOGACIVANJE (dodano nakon testiranja - poglavlje 4.3):
     Uz naslove videa, ukljucuju se i:
+    - description: pun opis videa (YouTube Data API, snippet.description),
+      skracen na prvih ~100 rijeci. Robusniji, zvanican-API-baziran izvor
+      sadrzaja koji NE zavisi od dostupnosti transkripata (za razliku od
+      Nivo 2) - dostupan za 100% videa, ne samo do 6 najnovijih.
     - tags: kljucne rijeci koje kreator sam dodaje svakom videu (SEO
       kategorizacija) - cesto precizniji, gusci semanticki signal nego
       sami naslovi, jer su birani specificno da opisu temu videa.
@@ -86,6 +90,9 @@ def build_channel_content_summary(channel_stats: dict, videos: list, transcripts
 
     for v in videos:
         parts.append(v["title"])
+        if v.get("description"):
+            desc_words = v["description"].split()[:100]
+            parts.append(" ".join(desc_words))
         if v.get("tags"):
             parts.append(", ".join(v["tags"]))
         if v.get("topic_categories"):
@@ -103,26 +110,17 @@ def calculate_brand_fit_score(brand_description: str, channel_stats: dict, video
 
     transcripts: opciono, vidi build_channel_content_summary - ako se
     proslijedi, sadrzajni profil kanala ukljucuje i transkript-isjecke
-    (Nivo 2 obogacivanje), inace se koristi samo Nivo 1 (naslovi +
+    (Nivo 2 obogacivanje), inace se koristi Nivo 1 (naslovi + opisi +
     tagovi + teme).
 
     VAZNA ISPRAVKA KALIBRACIJE: sirova kosinusna slicnost izmedju dva
     RAZLICITA teksta (opis brenda vs. sadrzaj kanala), kod modela
     text-embedding-3-small, empirijski skoro nikad ne prelazi ~0.5-0.6
-    cak ni za genuinski dobro povezane parove - nepovezani tekstovi
-    obicno daju ~0.0-0.15, dobro povezani ~0.25-0.45, veoma bliski
-    ~0.45-0.60. Direktno skaliranje "similarity * 100" (kao u prethodnoj
-    verziji) implicitno pretpostavlja da je 1.0 realno dostizno, cime
-    se SVI brand-fit skorovi sistematski potcjenjuju.
-
-    Zato se ovdje primjenjuje min-max preskaliranje na realisticniji
-    opseg [MIN_EXPECTED_SIMILARITY, MAX_EXPECTED_SIMILARITY] prije
-    konacnog skaliranja na 0-100. Ove granice su procjena autora
-    zasnovana na empirijskom ponasanju modela, ne iz objavljenog rada
-    - treba ih dodatno kalibrisati testiranjem na vise poznatih parova
-    brend-kanal (planirano poglavlje 4.3).
-    
-    
+    cak ni za genuinski dobro povezane parove. Zato se primjenjuje
+    min-max preskaliranje na realisticniji opseg
+    [MIN_EXPECTED_SIMILARITY, MAX_EXPECTED_SIMILARITY] - vrijednosti
+    empirijski izvedene iz sopstvenog kalibracionog testa (n=4 para,
+    poglavlje 4.3).
     """
     channel_content = build_channel_content_summary(channel_stats, videos, transcripts=transcripts)
 

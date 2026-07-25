@@ -21,19 +21,16 @@ Metodoloske izmjene u odnosu na prethodnu verziju:
    (non-compensatory) je namjerna hibridna metodologija, ne
    improvizacija - vidi iste izvore.
 4. Engagement benchmark (_engagement_benchmark_for_size) koristi
-   DVOSLOJNI pristup - vidi detaljnu napomenu iznad funkcije. Za
-   velike kanale koristi stvarne CHANNEL-LEVEL podatke (Lopez-
-   Navarrete Tabela 1), za manje kanale transparentno obiljezen
-   industrijski fallback.
-5. Subscriber-to-view ratio risk cap koristi Z-SCORE pristup umjesto
-   fiksnog praga, po uzoru na Daranda et al. (2025) - vidi napomenu
-   iznad _calculate_ratio_z_score.
+   TROSLOJNI pristup - vidi detaljnu napomenu iznad funkcije.
+5. Subscriber-to-view ratio I sentiment risk cap-ovi koriste Z-SCORE
+   pristup umjesto fiksnih pragova, po uzoru na Daranda et al. (2025).
+   Subscriber-ratio Z-score je kalibrisan na nezavisnom dataset-u
+   (n=878, Youtube_Influencer_Analysis_Updated.csv). Sentiment
+   Z-score je i dalje kalibrisan na manjem, sopstvenom test-uzorku
+   (n=4) - vidi napomene iznad obje funkcije.
 6. Kategorije rizika (nizak/srednji/visok) koriste PERCENTIL-BAZIRANE
    granice izvedene iz referentnog uzorka testiranih kanala, umjesto
-   pretpostavljenih vrijednosti - po uzoru na Daranda et al. (2025),
-   koji definisu "severity" kategorije kao procentile iz sopstvene
-   distribucije podataka. Vidi napomenu iznad
-   get_risk_category_thresholds.
+   pretpostavljenih vrijednosti - po uzoru na Daranda et al. (2025).
 """
 
 import statistics
@@ -45,48 +42,82 @@ MODULE_LABELS = ["quantitative", "authenticity", "sentiment", "brand_fit"]
 
 
 # ---------------------------------------------------------------------
-# Z-SCORE PRISTUP za subscriber-to-view ratio anomaliju - zamjenjuje
-# raniji fiksni prag (>50) statisticki utemeljenim pragom, po uzoru na
-# Daranda et al. (2025), koji koriste identican Z-score prag (2.0) za
-# detekciju anomalija, sa obrazlozenjem "95% interval povjerenja; 11%
-# stopa laznih pozitivnih".
+# Z-SCORE PRISTUP za subscriber-to-view ratio anomaliju - kalibrisano
+# na nezavisnom, vecem dataset-u (Youtube_Influencer_Analysis_
+# Updated.csv - javno dostupan, rucno prikupljen istrazivacki dataset,
+# 647 jedinstvenih kanala, raspon 34-305M pretplatnika). Nakon
+# ciscenja outliera (uklonjeni redovi sa ER>100% kao vjerovatne
+# greske u podacima, i gornji 1. percentil ratio vrijednosti), n=878
+# validnih video-kanal parova.
 #
-# Formula: z = (x - mu) / sigma (standardna statisticka mjera koliko
-# je vrijednost x udaljena od srednje vrijednosti referentnog uzorka,
-# izrazeno u jedinicama standardne devijacije).
+# Mean=13.30, std=46.37 (desno-asimetricna distribucija - ocekivano
+# za ovu vrstu omjera, koji prirodno ima dugi rep). Prag izracunat po
+# istoj metodologiji kao Daranda et al. (2025) - mean + 2*std.
 #
-# VAZNO: _REFERENCE_RATIOS MORA biti popunjen stvarnim
-# subscriber_to_view_ratio vrijednostima iz testiranih kanala prije
-# nego sto ovaj mehanizam moze pouzdano da se koristi - vidi poglavlje
-# 4.3 za spisak testiranih kanala i njihovih vrijednosti. Mali uzorak
-# (n<30) znaci da je ovo PRIVREMENA procjena - navedeno kao
-# ogranicenje. Dok je uzorak prazan/nedovoljan, cap se jednostavno ne
-# aktivira (vraca z-score 0.0), sto je bezbjedan fallback.
+# NAPOMENA (transparentno navedeno): distribucija je desno-asimetricna
+# (mean >> median), sto znaci da mean+2*std nije savrseno kalibrisan
+# prag za ovakvu raspodjelu - robusnija alternativa (npr. medijan +
+# MAD) bi bila metodoloski cistija, ali mean+2*std je zadrzan radi
+# konzistentnosti sa Daranda et al. (2025) metodologijom.
 # ---------------------------------------------------------------------
 
-_REFERENCE_RATIOS = [
-    # POPUNITI stvarnim subscriber_to_view_ratio vrijednostima iz
-    # testiranih kanala, npr:
-    # 0.98,   # MasterChef Srbija
-    # 5.23,   # NikkieTutorials
-    # ...
-]
-
+_REFERENCE_RATIO_MEAN = 13.3028
+_REFERENCE_RATIO_STD = 46.3733
 _Z_SCORE_THRESHOLD = 2.0  # Daranda et al. (2025) - 95% interval povjerenja
 
 
 def _calculate_ratio_z_score(ratio: float) -> float:
     """
     Z-score za subscriber_to_view_ratio u odnosu na referentnu
-    distribuciju testiranih kanala.
+    distribuciju (n=878, Youtube_Influencer_Analysis_Updated.csv).
     """
-    if len(_REFERENCE_RATIOS) < 2:
-        return 0.0  # nedovoljno referentnih podataka - cap se ne aktivira
-    mean_ratio = statistics.mean(_REFERENCE_RATIOS)
-    std_ratio = statistics.stdev(_REFERENCE_RATIOS)
-    if std_ratio == 0:
+    if _REFERENCE_RATIO_STD == 0:
         return 0.0
-    return (ratio - mean_ratio) / std_ratio
+    return (ratio - _REFERENCE_RATIO_MEAN) / _REFERENCE_RATIO_STD
+
+
+# ---------------------------------------------------------------------
+# Z-SCORE PRISTUP za sentiment anomaliju - ista metodologija kao
+# subscriber-ratio Z-score (Daranda et al., 2025), obrnut smjer
+# (nizak sentiment = rizik, ne visok).
+#
+# NAPOMENA (transparentno navedeno): ovo je STATICKI Z-score na
+# jednom "presjeku" sentimenta, ne volatility-baziran pristup koji
+# Alipour et al. (2025, preprint, ssrn7102482) pokazuju kao jaci
+# prediktor reputacionog rizika (AUC 0.70-0.78 na stvarnim podacima).
+# Volatility pristup zahtijeva pracenje sentimenta kroz vise
+# vremenskih tacaka, sto trenutni pipeline (jedan uzorak komentara po
+# analizi) ne podrzava - navedeno kao pravac buduceg istrazivanja.
+#
+# Referentni uzorak (n=4, testirani kanali - poglavlje 4.3): MKBHD,
+# Simon Wilson, AN NA, NikkieTutorials. Mali uzorak (n<30) - navedeno
+# kao ogranicenje, isti tip privremene procjene kao i ranija verzija
+# subscriber-ratio Z-score prije pristupa vecem dataset-u.
+# ---------------------------------------------------------------------
+
+_REFERENCE_SENTIMENT_SCORES = [
+    10,     # MKBHD
+    24.5,   # Simon Wilson
+    48.5,   # AN NA
+    20.5,   # NikkieTutorials
+]
+
+_SENTIMENT_Z_THRESHOLD = -2.0  # Daranda et al. (2025), isti princip, obrnut smjer
+
+
+def _calculate_sentiment_z_score(sentiment_score: float) -> float:
+    """
+    Z-score za sentiment_score u odnosu na referentnu distribuciju
+    testiranih kanala, po istoj metodologiji kao
+    _calculate_ratio_z_score.
+    """
+    if len(_REFERENCE_SENTIMENT_SCORES) < 2:
+        return 0.0
+    mean_s = statistics.mean(_REFERENCE_SENTIMENT_SCORES)
+    std_s = statistics.stdev(_REFERENCE_SENTIMENT_SCORES)
+    if std_s == 0:
+        return 0.0
+    return (sentiment_score - mean_s) / std_s
 
 
 # Risk cap pravila kao formalno IF-THEN mapiranje:
@@ -96,8 +127,8 @@ def _calculate_ratio_z_score(ratio: float) -> float:
 # logika, Einhorn 1970).
 RISK_CAP_RULES = [
     {
-        "name": "Izrazito negativan sentiment",
-        "condition": lambda m: m["sentiment_score"] < -30,
+        "name": "Statisticki anomalan negativan sentiment (Z-score < -2.0)",
+        "condition": lambda m: _calculate_sentiment_z_score(m["sentiment_score"]) < _SENTIMENT_Z_THRESHOLD,
         "cap": 40,
     },
     {
@@ -127,7 +158,7 @@ RISK_CAP_RULES = [
 
 
 # ---------------------------------------------------------------------
-# Engagement benchmark - DVOSLOJNI pristup, jer nijedan pojedinacan
+# Engagement benchmark - TROSLOJNI pristup, jer nijedan pojedinacan
 # izvor ne pokriva ceo opseg velicina kanala pouzdano:
 #
 # SLOJ 1 (>= 15 miliona pretplatnika): power-law kriva fitovana na
@@ -144,9 +175,22 @@ RISK_CAP_RULES = [
 # koristi se eksplicitno OBILJEZEN, konzervativan industrijski prag:
 # sredina "dobrog" opsega (3-7%) po opste prihvacenoj industrijskoj
 # klasifikaciji (YouTube Engagement Rate Calculator FAQ, komercijalni
-# izvor - NIJE peer-reviewed, tretirati kao privremeni oslonac dok se
-# ne nadje/sprovede pravi channel-level akademski izvor za ovaj
-# segment velicina - vidi poglavlje 4.3, planirano dalje istrazivanje).
+# izvor - NIJE peer-reviewed). Pokusaj kalibracije na nezavisnom
+# dataset-u (Youtube_Influencer_Analysis_Updated.csv, n=883) NIJE
+# uspio - power-law regresija subs->ER dala je R^2=0.004 (statisticki
+# beznacajno), cak i nakon stratifikacije po jeziku sadrzaja
+# (R^2=0.002-0.019) - navedeno kao negativan, ali vrijedan nalaz u
+# poglavlju 4.3/5, ne kao razlog za zamjenu postojeceg izvora.
+#
+# SLOJ 3 (>= 100 miliona pretplatnika, mega-kanali): REVIDIRANO nakon
+# pronalaska Wies, Bleier & Edeling (2022), "Finding Goldilocks
+# Influencers", Journal of Marketing 87(3), 383-405, koji na 802
+# Instagram kampanje (1700+ influensera) utvrdjuju OBRNUTO U-OBLIKOVAN
+# odnos izmedju broja pratilaca i engagement-a. Umjesto proizvoljnog
+# fiksnog broja, koristi se KONTINUIRANA EKSTRAPOLACIJA vec fitovane
+# krive (bez gornjeg klema), sa apsolutnim podom od 1% - smjer
+# potkrijepljen Wies et al. (2022), magnituda NIJE empirijski
+# potvrdjena za ovaj opseg.
 # ---------------------------------------------------------------------
 
 _LARGE_CHANNEL_CURVE_A = 2415.774517
@@ -157,23 +201,30 @@ _LARGE_CHANNEL_MAX_SUBS = 35_900_000   # gornja granica stvarno mjerenog opsega 
 
 _SMALL_CHANNEL_FALLBACK_ER = 5.0  # sredina "dobrog" opsega 3-7%, industrijski izvor, NIJE akademski potvrdjeno
 
+_MEGA_CHANNEL_THRESHOLD = 100_000_000
+_MEGA_CHANNEL_MIN_BENCHMARK = 1.0  # apsolutni pod - sprjecava nerealisticno nisku vrijednost za astronomske brojeve pretplatnika
+
 
 def _engagement_benchmark_for_size(subscriber_count: int) -> float:
     """
     Vraca ocekivan "odlican" engagement rate (%) za dati broj
-    pretplatnika.
+    pretplatnika. TROSLOJNI pristup:
 
-    Za velike kanale (>= 15M), koristi krivu fitovanu na stvarne
-    channel-level podatke (n=3, Lopez-Navarrete Tabela 1) - kriva se
-    dodatno klemuje na stvarno mjeren opseg (18.4M-35.9M) da se
-    izbjegne neopravdana ekstrapolacija van njega.
+    SLOJ 1 - mega-kanali (>= 100M): kontinuirana ekstrapolacija
+    fitovane krive (BEZ gornjeg klema), sa apsolutnim podom od 1%.
+    Smjer opadanja potkrijepljen Wies et al. (2022, Journal of
+    Marketing), magnituda NIJE empirijski potvrdjena za ovaj opseg -
+    tretirati kao najbolju trenutno dostupnu procjenu, ne konacan broj.
 
-    Za manje kanale (< 15M), gdje nemamo pouzdan akademski channel-
-    level izvor, koristi se transparentno obiljezen industrijski
-    fallback (5%, sredina "dobrog" opsega 3-7%) - NIJE akademski
-    potvrdjeno, treba tretirati kao privremeno rjesenje.
+    SLOJ 2 - veliki kanali (15M-100M): kriva klemovana na stvarno
+    mjeren opseg (18.4M-35.9M, Lopez-Navarrete Tabela 1).
+
+    SLOJ 3 - manji kanali (< 15M): industrijski fallback (5%).
     """
-    if subscriber_count >= _LARGE_CHANNEL_THRESHOLD:
+    if subscriber_count >= _MEGA_CHANNEL_THRESHOLD:
+        extrapolated = _LARGE_CHANNEL_CURVE_A * (subscriber_count ** _LARGE_CHANNEL_CURVE_B)
+        return round(max(_MEGA_CHANNEL_MIN_BENCHMARK, extrapolated), 3)
+    elif subscriber_count >= _LARGE_CHANNEL_THRESHOLD:
         clamped = max(_LARGE_CHANNEL_MIN_SUBS, min(subscriber_count, _LARGE_CHANNEL_MAX_SUBS))
         return round(_LARGE_CHANNEL_CURVE_A * (clamped ** _LARGE_CHANNEL_CURVE_B), 3)
     else:
@@ -184,7 +235,7 @@ def normalize_quantitative_score(quant_metrics: dict, subscriber_count: int = No
     """
     Pretvara sirove kvantitativne metrike u jedinstven skor 0-100.
 
-    Engagement komponenta se poredi sa dvoslojnim benchmarkom (vidi
+    Engagement komponenta se poredi sa troslojnim benchmarkom (vidi
     _engagement_benchmark_for_size) umjesto univerzalnog fiksnog
     praga ili proizvoljnih stepenastih kategorija.
     """
