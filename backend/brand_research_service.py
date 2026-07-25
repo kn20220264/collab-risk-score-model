@@ -66,6 +66,17 @@ Sastavi KRATAK opis (30-50 rijeci, STROGO) koji sadrzi SAMO:
 - Kljucne teme/oblasti povezane sa brendom (npr. "tehnologija,
   inovacija, dizajn proizvoda")
 
+VAZNO ZA USLUGE/PLATFORME (za razliku od fizickih proizvoda): opisi
+uslugu kroz AKTIVNOST/ISKUSTVO KORISNIKA, ne kroz interne poslovne ili
+tehnicke termine kompanije. NE koristi rijeci poput "API", "metasearch",
+"platforma za...", "algoritam", "tehnologija za..." - umjesto toga,
+opisi sta korisnik STVARNO RADI kad koristi tu uslugu, istim jezikom
+kojim bi to opisao neko ko je stvarno koristi (npr. za Skyscanner:
+"pretrazivanje i poredjenje cijena avio karata, planiranje putovanja,
+pronalazenje jeftinih letova" umjesto "metasearch, Search API, price
+alerts").
+
+
 NE UKLJUCUJ (ovo je namjerno iskljuceno, ne propust):
 - Ciljnu demografiju ili psihografske segmente publike
 - Filozofiju brendiranja, misiju, vrijednosti kompanije

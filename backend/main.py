@@ -20,6 +20,11 @@ rada (pregled alata):
 Zadrzan je i stari POST /analyze endpoint (deprecated) radi
 kompatibilnosti sa postojecim frontend-om dok se ne prebaci na novu
 strukturu.
+
+Dodato (Creator Persona / Profanity / Brand Partners / Audience
+Health / Content Analyzed): prosirenje po uzoru na dodatne "agente"
+komercijalnih alata (vidi content_analysis_service.py za detaljno
+metodolosko obrazlozenje).
 """
 
 from fastapi import FastAPI, HTTPException, Query
@@ -38,10 +43,11 @@ from .ai_service import analyze_comments_batch
 from .brand_fit import calculate_brand_fit_score
 from .risk_aggregation import calculate_final_risk_score, calculate_bulk_risk_scores
 from .explanation_service import generate_risk_explanation
-from .ahp_service import get_module_weights, MODULE_COMPARISON_MATRIX, MODULE_LABELS
+from .roc_service import get_module_weights, MODULE_RANK_ORDER, MODULE_LABELS
 from .risk_aggregation import RISK_CAP_RULES
 from .brand_research_service import research_brand
 from .transcript_service import get_transcripts_for_videos
+from .content_analysis_service import analyze_creator_content
 
 app = FastAPI(
     title="Collab Risk Score API",
@@ -113,6 +119,8 @@ def _gather_and_score(channel_handle: str, brand_description: str = None, brand_
 
     return {
         "stats": stats,
+        "videos": videos,
+        "transcripts": transcripts,
         "quant_metrics": quant_metrics,
         "sentiment_result": sentiment_result,
         "brand_fit_result": brand_fit_result,
@@ -131,6 +139,69 @@ def _tier_from_score(score: float) -> str:
         return "Fair"
     else:
         return "Poor"
+
+
+def _compute_audience_health(quant_metrics: dict, sentiment_result: dict) -> dict:
+    """
+    'Audience Health' sekcija (po uzoru na CreatorScore-ovu istoimenu
+    kategoriju) - koristi vec postojece metrike, samo preformulisane
+    u citljiviji format:
+    - bot_activity_pct: proksi preko subscriber_to_view_ratio (visi
+      odnos = veca sumnja na neaktivnu/kupljenu bazu, vidi
+      scoring.py/risk_aggregation.py za teorijsko obrazlozenje)
+    - toxic_pct: % negativnih komentara iz sentiment analize
+    """
+    ratio = quant_metrics.get("subscriber_to_view_ratio", 0)
+    # USKLADJENO sa normalize_authenticity_score (risk_aggregation.py) -
+    # oba mjesta sada koriste isti mnozilac (3) za istu osnovnu ideju
+    # (subscriber-to-view ratio kao proksi autenticnosti/bot aktivnosti).
+    #
+    # METODOLOSKO OGRANICENJE (transparentno, ne skriveno): mnozilac 3
+    # je HEURISTIKA, ne empirijski izveden broj. Pravi akademski
+    # pristup za ovu vrstu proraciuna (Developing a Multimodal Approach
+    # to Channel Characterization on YouTube) NE koristi pretpostavljen
+    # mnozilac - umjesto toga, racuna Cohen's d effect size za svaku
+    # metriku na osnovu STVARNOG dataseta aktivnih i suspendovanih
+    # (potvrdjeno anomalnih) kanala, i koristi taj Cohen's d kao tezinu.
+    # Takav pristup zahtijeva label-ovan dataset poznato-suspendovanih
+    # kanala, sto nadilazi obim ovog rada - vidi napomenu u
+    # normalize_authenticity_score (risk_aggregation.py) i poglavlje
+    # "Ogranicenja i buduci rad".
+    bot_activity_pct = round(min(ratio * 3, 100), 1)
+
+    toxic_pct = round(sentiment_result.get("negative_pct", 0), 1)
+
+    if bot_activity_pct < 5 and toxic_pct < 10:
+        health_label = "Excellent"
+    elif bot_activity_pct < 15 and toxic_pct < 25:
+        health_label = "Good"
+    elif bot_activity_pct < 30 and toxic_pct < 40:
+        health_label = "Fair"
+    else:
+        health_label = "Poor"
+
+    return {
+        "bot_activity_pct": bot_activity_pct,
+        "toxic_pct": toxic_pct,
+        "health_label": health_label,
+        "sentiment_breakdown": {
+            "positive_pct": sentiment_result.get("positive_pct", 0),
+            "neutral_pct": sentiment_result.get("neutral_pct", 0),
+            "negative_pct": sentiment_result.get("negative_pct", 0),
+        },
+    }
+
+
+def _compute_content_analyzed(quant_metrics: dict, sentiment_result: dict) -> dict:
+    """
+    'Content Analyzed' sekcija - samo pregled obima podataka koriscenih
+    u analizi (transparentnost, ne nova metrika).
+    """
+    return {
+        "posts_analyzed": quant_metrics.get("sample_size", 0),
+        "comments_analyzed": sentiment_result.get("sample_size", 0),
+        "platforms": 1,  # samo YouTube - eksplicitno, za razliku od multi-platform alata
+    }
 
 
 # ---------------------------------------------------------------------
@@ -152,7 +223,7 @@ def get_methodology():
     Namjerna razlika u odnosu na komercijalne alate (CreatorScore,
     HypeAuditor), ciji algoritmi nisu javno objavljeni.
     """
-    ahp_result = get_module_weights()
+    roc_result = get_module_weights()
 
     risk_cap_description = [
         {"name": rule["name"], "cap": rule["cap"]}
@@ -160,15 +231,11 @@ def get_methodology():
     ]
 
     return {
-        "weighting_method": "AHP (Analytic Hierarchy Process) - Saaty (1980, 1987)",
+        "weighting_method": "ROC (Rank Order Centroid) - vidi roc_service.py za obrazlozenje metoda",
         "modules": MODULE_LABELS,
-        "ahp": {
-            "comparison_matrix": ahp_result["comparison_matrix"],
-            "weights": ahp_result["weights"],
-            "lambda_max": ahp_result["lambda_max"],
-            "consistency_index": ahp_result["consistency_index"],
-            "consistency_ratio": ahp_result["consistency_ratio"],
-            "is_consistent": ahp_result["is_consistent"],
+        "roc": {
+            "rank_order": roc_result["rank_order"],
+            "weights": roc_result["weights"],
         },
         "risk_cap_mechanism": {
             "type": "conjunctive / non-compensatory (Einhorn, 1970)",
@@ -183,7 +250,7 @@ def get_methodology():
             "Za analizu vise kreatora odjednom (POST /api/v1/creators/bulk), "
             "koriste se entropijske tezine (Hwang & Yoon, 1981) izracunate "
             "iz tog konkretnog uzorka, kao objektivna alternativa fiksnim "
-            "AHP tezinama."
+            "ROC tezinama."
         ),
     }
 
@@ -205,14 +272,20 @@ def get_creator_score(
         subscriber_count=data["stats"]["subscriber_count"],
     )
 
+    content_analysis = analyze_creator_content(data["stats"], data["videos"], data["transcripts"])
+    audience_health = _compute_audience_health(data["quant_metrics"], data["sentiment_result"])
+    content_analyzed = _compute_content_analyzed(data["quant_metrics"], data["sentiment_result"])
+
     response = {
         "status": "scored",
         "creator": {
             "platform": "youtube",
             "handle": handle,
             "display_name": data["stats"]["title"],
+            "thumbnail_url": data["stats"].get("thumbnail_url"),
             "subscriber_count": data["stats"]["subscriber_count"],
             "video_count": data["stats"]["video_count"],
+            "engagement_rate_pct": data["quant_metrics"]["engagement_rate"],
             "score": risk_result["final_score"],
             "tier": _tier_from_score(risk_result["final_score"]),
             "risk_category": risk_result["risk_category"],
@@ -222,6 +295,13 @@ def get_creator_score(
             "triggered_risk_flags": risk_result["triggered_caps"],
             "brand_description_used": data["brand_description_used"],
             "brand_description_auto_generated": data["brand_description_auto_generated"],
+            "creator_persona": content_analysis.get("creator_persona"),
+            "profanity_analysis": content_analysis.get("profanity_analysis"),
+            "brand_partners": content_analysis.get("brand_partners"),
+            "audience_health": audience_health,
+            "content_analyzed": content_analyzed,
+            "brand_fit_warning": data["brand_fit_result"].get("warning"),
+            "content_profile_level": data["brand_fit_result"].get("content_profile_level"),
         },
     }
 
@@ -308,6 +388,10 @@ def analyze_channel(request: AnalyzeRequest):
         data["stats"]["title"], request.brand_description, final_result
     )
 
+    content_analysis = analyze_creator_content(data["stats"], data["videos"], data["transcripts"])
+    audience_health = _compute_audience_health(data["quant_metrics"], data["sentiment_result"])
+    content_analyzed = _compute_content_analyzed(data["quant_metrics"], data["sentiment_result"])
+
     return {
         "channel": {
             "title": data["stats"]["title"],
@@ -319,4 +403,9 @@ def analyze_channel(request: AnalyzeRequest):
         "brand_fit": data["brand_fit_result"],
         "risk_assessment": final_result,
         "ai_explanation": explanation,
+        "creator_persona": content_analysis.get("creator_persona"),
+        "profanity_analysis": content_analysis.get("profanity_analysis"),
+        "brand_partners": content_analysis.get("brand_partners"),
+        "audience_health": audience_health,
+        "content_analyzed": content_analyzed,
     }

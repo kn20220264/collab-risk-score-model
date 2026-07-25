@@ -25,12 +25,6 @@ const MODULE_INFO = {
   },
 };
 
-const RISK_CAP_DISPLAY = [
-  { name: "Izrazito negativan sentiment", cap: 40 },
-  { name: "Sumnjiv odnos pretplatnici/pregledi", cap: 35 },
-  { name: "Vrlo slabo brand-fit poklapanje", cap: 50 },
-];
-
 function Methodology() {
   const [methodology, setMethodology] = useState(null);
 
@@ -47,19 +41,21 @@ function Methodology() {
     };
   }, []);
 
-  const weights = methodology?.ahp?.weights;
-  const cr = methodology?.ahp?.consistency_ratio;
+  const weights = methodology?.roc?.weights;
+  const rankOrder = methodology?.roc?.rank_order;
+  const riskCapRules = methodology?.risk_cap_mechanism?.rules || [];
 
   return (
     <section className="methodology-section" id="how-it-works">
       <div className="section-inner">
         <div className="section-heading">
           <div className="eyebrow">Kako se računa skor</div>
-          <h2>Četiri nezavisna modula, ponderisana AHP metodom</h2>
+          <h2>Četiri nezavisna modula, ponderisana ROC metodom</h2>
           <p className="section-subtitle">
             Svaki modul se boduje 0–100, a zatim se kombinuje ponderisanim
-            zbirom čije težine su matematički izvedene iz pairwise comparison
-            matrice (AHP), a ne proizvoljno upisane.
+            zbirom čije težine su izvedene iz Rank Order Centroid (ROC)
+            metode — matematičke formule primijenjene na rangiranje
+            kriterijuma po važnosti, a ne proizvoljno upisane.
           </p>
         </div>
 
@@ -85,12 +81,10 @@ function Methodology() {
           ))}
         </div>
 
-        {typeof cr === "number" && (
+        {rankOrder && (
           <p className="ahp-note">
-            AHP consistency ratio (CR) = {cr.toFixed(3)} —{" "}
-            {methodology.ahp.is_consistent
-              ? "matrica poređenja je konzistentna (CR < 0.10)."
-              : "matrica poređenja je iznad praga konzistentnosti."}
+            Redoslijed važnosti (ROC rang, od najvažnijeg):{" "}
+            {rankOrder.map((key) => MODULE_INFO[key]?.title || key).join(" → ")}
           </p>
         )}
 
@@ -103,7 +97,7 @@ function Methodology() {
             skor se ograničava nezavisno od ostalih modula.
           </p>
           <div className="risk-cap-rules">
-            {RISK_CAP_DISPLAY.map((rule) => (
+            {riskCapRules.map((rule) => (
               <div className="risk-cap-rule" key={rule.name}>
                 <span>{rule.name}</span>
                 <span className="risk-cap-value">max {rule.cap}</span>
@@ -116,7 +110,7 @@ function Methodology() {
           <p>
             Za razliku od komercijalnih alata poput CreatorScore ili
             HypeAuditor, čiji algoritmi nisu javno objavljeni, cijela
-            metodologija ovog prototipa — AHP matrica, izračunate težine i
+            metodologija ovog prototipa — ROC rang, izračunate težine i
             risk cap pravila — dostupna je otvoreno preko API-ja.
           </p>
           <a
