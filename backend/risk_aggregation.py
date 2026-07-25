@@ -3,16 +3,17 @@ Modul agregacije risk skora.
 
 Metodoloske izmjene u odnosu na prethodnu verziju:
 1. Tezine w1-w4 se vise NE hardkoduju direktno ovdje - uvoze se iz
-   ahp_service.py (izracunate iz pairwise comparison matrice preko
-   glavnog sopstvenog vektora, Saaty 1980/1987) ili, za bulk analizu
-   vise kreatora, iz entropy_service.py (Hwang & Yoon, 1981).
+   roc_service.py (Rank Order Centroid - Sidanski princip AHP ankete
+   nije bio izvodljiv zbog nedostatka pristupa vecem broju eksperata,
+   pa je ROC metod usvojen kao pojednostavljena, ali i dalje akademski
+   utemeljena alternativa - zahtijeva samo rangiranje kriterijuma, ne
+   puna parna poredjenja) ili, za bulk analizu vise kreatora, iz
+   entropy_service.py (Hwang & Yoon, 1981).
 2. Risk cap mehanizam je formalizovan kao IF-THEN mapiranje
    (frekvencija/ozbiljnost -> kategorija rizika), po uzoru na
    Markowski & Mannan (2008), citirano u Duijm (2015, Safety Science),
-   umjesto proizvoljnih pragova bez obrazlozenja. Pragovi ostaju
-   procjena autora (jer komercijalni alati poput CreatorScore/
-   HypeAuditor ne objavljuju svoje), ali je sama STRUKTURA pravila
-   (non-compensatory/conjunctive) akademski utemeljena - vidi
+   umjesto proizvoljnih pragova bez obrazlozenja. Struktura pravila
+   (non-compensatory/conjunctive) je akademski utemeljena - vidi
    ssrn5468566.pdf (Einhorn, 1970 - conjunctive model) i
    Banihabib et al. (2020) za poredjenje compensatory/
    non-compensatory MCDM pristupa.
@@ -20,21 +21,73 @@ Metodoloske izmjene u odnosu na prethodnu verziju:
    (non-compensatory) je namjerna hibridna metodologija, ne
    improvizacija - vidi iste izvore.
 4. Engagement benchmark (_engagement_benchmark_for_size) koristi
-   DVOSLOJNI pristup - vidi detaljnu napomenu iznad funkcije. Ranija
-   verzija (jednoslojna power-law regresija na Lopez-Navarrete Tabelu
-   4) je napustena jer su ti podaci na nivou POJEDINACNOG VIDEA, ne
-   kanala, sto je dovodilo do neopravdano strogog benchmarka za manje/
-   srednje kanale (klemovanje na najvisu vrijednost iz seta). Nova
-   verzija koristi stvarne CHANNEL-LEVEL podatke (Lopez-Navarrete
-   Tabela 1, n=3) za velike kanale, i transparentno obiljezen
-   industrijski fallback za manje kanale, gdje pouzdan akademski
-   channel-level izvor trenutno ne postoji.
+   DVOSLOJNI pristup - vidi detaljnu napomenu iznad funkcije. Za
+   velike kanale koristi stvarne CHANNEL-LEVEL podatke (Lopez-
+   Navarrete Tabela 1), za manje kanale transparentno obiljezen
+   industrijski fallback.
+5. Subscriber-to-view ratio risk cap koristi Z-SCORE pristup umjesto
+   fiksnog praga, po uzoru na Daranda et al. (2025) - vidi napomenu
+   iznad _calculate_ratio_z_score.
+6. Kategorije rizika (nizak/srednji/visok) koriste PERCENTIL-BAZIRANE
+   granice izvedene iz referentnog uzorka testiranih kanala, umjesto
+   pretpostavljenih vrijednosti - po uzoru na Daranda et al. (2025),
+   koji definisu "severity" kategorije kao procentile iz sopstvene
+   distribucije podataka. Vidi napomenu iznad
+   get_risk_category_thresholds.
 """
 
-from .ahp_service import get_module_weights
+import statistics
+
+from .roc_service import get_module_weights
 from .entropy_service import compute_entropy_weights, build_decision_matrix
 
 MODULE_LABELS = ["quantitative", "authenticity", "sentiment", "brand_fit"]
+
+
+# ---------------------------------------------------------------------
+# Z-SCORE PRISTUP za subscriber-to-view ratio anomaliju - zamjenjuje
+# raniji fiksni prag (>50) statisticki utemeljenim pragom, po uzoru na
+# Daranda et al. (2025), koji koriste identican Z-score prag (2.0) za
+# detekciju anomalija, sa obrazlozenjem "95% interval povjerenja; 11%
+# stopa laznih pozitivnih".
+#
+# Formula: z = (x - mu) / sigma (standardna statisticka mjera koliko
+# je vrijednost x udaljena od srednje vrijednosti referentnog uzorka,
+# izrazeno u jedinicama standardne devijacije).
+#
+# VAZNO: _REFERENCE_RATIOS MORA biti popunjen stvarnim
+# subscriber_to_view_ratio vrijednostima iz testiranih kanala prije
+# nego sto ovaj mehanizam moze pouzdano da se koristi - vidi poglavlje
+# 4.3 za spisak testiranih kanala i njihovih vrijednosti. Mali uzorak
+# (n<30) znaci da je ovo PRIVREMENA procjena - navedeno kao
+# ogranicenje. Dok je uzorak prazan/nedovoljan, cap se jednostavno ne
+# aktivira (vraca z-score 0.0), sto je bezbjedan fallback.
+# ---------------------------------------------------------------------
+
+_REFERENCE_RATIOS = [
+    # POPUNITI stvarnim subscriber_to_view_ratio vrijednostima iz
+    # testiranih kanala, npr:
+    # 0.98,   # MasterChef Srbija
+    # 5.23,   # NikkieTutorials
+    # ...
+]
+
+_Z_SCORE_THRESHOLD = 2.0  # Daranda et al. (2025) - 95% interval povjerenja
+
+
+def _calculate_ratio_z_score(ratio: float) -> float:
+    """
+    Z-score za subscriber_to_view_ratio u odnosu na referentnu
+    distribuciju testiranih kanala.
+    """
+    if len(_REFERENCE_RATIOS) < 2:
+        return 0.0  # nedovoljno referentnih podataka - cap se ne aktivira
+    mean_ratio = statistics.mean(_REFERENCE_RATIOS)
+    std_ratio = statistics.stdev(_REFERENCE_RATIOS)
+    if std_ratio == 0:
+        return 0.0
+    return (ratio - mean_ratio) / std_ratio
+
 
 # Risk cap pravila kao formalno IF-THEN mapiranje:
 # "AKO je metrika M u kategoriji kriticnog nalaza, ONDA je finalni
@@ -48,8 +101,8 @@ RISK_CAP_RULES = [
         "cap": 40,
     },
     {
-        "name": "Sumnjiv odnos pretplatnici/pregledi",
-        "condition": lambda m: m["subscriber_to_view_ratio"] > 50,
+        "name": "Statisticki anomalan odnos pretplatnici/pregledi (Z-score > 2.0)",
+        "condition": lambda m: _calculate_ratio_z_score(m["subscriber_to_view_ratio"]) > _Z_SCORE_THRESHOLD,
         "cap": 35,
     },
     # GRADUISAN brand-fit cap (dva praga) - struktura sa vise
@@ -87,17 +140,13 @@ RISK_CAP_RULES = [
 #   (regresija: log(ER) = log(a) + b*log(subs), numpy.polyfit)
 #
 # SLOJ 2 (< 15 miliona pretplatnika): NEMAMO pouzdan akademski
-# channel-level izvor za ovaj segment (Lopez-Navarrete Tabela 4 je
-# video-level, pogresan nivo agregacije za direktnu primjenu ovdje -
-# klemovanje na tim podacima je ranije davalo neopravdano strog
-# benchmark ~20% za sve kanale ispod ~600k pretplatnika). Umjesto
-# lazne preciznosti, koristi se eksplicitno OBILJEZEN, konzervativan
-# industrijski prag: sredina "dobrog" opsega (3-7%) po opste
-# prihvacenoj industrijskoj klasifikaciji (YouTube Engagement Rate
-# Calculator FAQ, komercijalni izvor - NIJE peer-reviewed, tretirati
-# kao privremeni oslonac dok se ne nadje/sprovede pravi channel-level
-# akademski izvor za ovaj segment velicina - vidi poglavlje 4.3,
-# planirano dalje istrazivanje).
+# channel-level izvor za ovaj segment. Umjesto lazne preciznosti,
+# koristi se eksplicitno OBILJEZEN, konzervativan industrijski prag:
+# sredina "dobrog" opsega (3-7%) po opste prihvacenoj industrijskoj
+# klasifikaciji (YouTube Engagement Rate Calculator FAQ, komercijalni
+# izvor - NIJE peer-reviewed, tretirati kao privremeni oslonac dok se
+# ne nadje/sprovede pravi channel-level akademski izvor za ovaj
+# segment velicina - vidi poglavlje 4.3, planirano dalje istrazivanje).
 # ---------------------------------------------------------------------
 
 _LARGE_CHANNEL_CURVE_A = 2415.774517
@@ -153,6 +202,24 @@ def normalize_quantitative_score(quant_metrics: dict, subscriber_count: int = No
 def normalize_authenticity_score(quant_metrics: dict) -> float:
     """
     Manji subscriber/view ratio = bolja autenticnost.
+
+    METODOLOSKO OGRANICENJE (transparentno, ne skriveno): mnozilac 3
+    je HEURISTIKA, uskladjena sa istom logikom u
+    main.py::_compute_audience_health (koja koristi isti odnos za
+    "bot activity" prikaz). Ovaj konkretan broj NIJE empirijski izveden.
+
+    Pravi akademski pristup za ovu vrstu proracuna - vidi Developing a
+    Multimodal Approach to Channel Characterization on YouTube - ne
+    pretpostavlja mnozilac, nego racuna Cohen's d effect size (Cohen,
+    1988) za svaku relacionu metriku (ukljucujuci views-to-subscriber)
+    na osnovu STVARNOG label-ovanog dataseta aktivnih i potvrdjeno
+    suspendovanih kanala (u njihovom slucaju: 71 kanal, 7 suspendovanih),
+    i koristi taj Cohen's d kao tezinu u ponderisanom zbiru
+    (S = sum(d_i * x_i)). Takav pristup zahtijeva prikupljanje
+    sopstvenog label-ovanog dataseta poznato-problematicnih kanala kroz
+    vrijeme, sto nadilazi obim ovog rada. Trenutni mnozilac (3) treba
+    tretirati kao pocetnu, nepotvrdjenu procjenu - eksplicitno navedeno
+    kao ogranicenje i pravac buduceg istrazivanja u poglavlju 5.
     """
     ratio = quant_metrics["subscriber_to_view_ratio"]
     score = max(0, 100 - ratio * 3)
@@ -190,10 +257,62 @@ def apply_risk_caps(final_score: float, metrics: dict) -> dict:
     }
 
 
+# ---------------------------------------------------------------------
+# PERCENTIL-BAZIRANE GRANICE za kategorije rizika - zamjenjuju ranije
+# pretpostavljene granice (70/45) empirijski izvedenim vrijednostima
+# iz sopstvenog testiranog uzorka, po uzoru na Daranda et al. (2025),
+# koji definisu "severity" kategorije kao procentile iz sopstvene
+# distribucije podataka (npr. "High = gornjih 5%").
+#
+# Ovdje se koristi tercil-podjela (donja/gornja granica na 33./67.
+# percentilu) umjesto Daranda-inog asimetricnog razbijanja (5%/15%/
+# 80%), jer je njihov pristup dizajniran za RIJETKE anomalije, dok
+# ovaj model treba da podijeli CIJEL uzorak na tri priblizno jednaka
+# dijela (nizak/srednji/visok rizik) - metodoloska adaptacija istog
+# principa (percentil-bazirano umjesto pretpostavljeno), ne identicna
+# replikacija.
+#
+# VAZNO: _REFERENCE_FINAL_SCORES MORA biti popunjen stvarnim finalnim
+# skorovima testiranih kanala (POD TRENUTNOM verzijom koda - ROC
+# tezine + nova brand-fit kalibracija) prije upotrebe. Dok uzorak nije
+# dovoljan (n<5), koristi se fallback na ranije pretpostavljene
+# vrijednosti (70/45).
+# ---------------------------------------------------------------------
+
+_REFERENCE_FINAL_SCORES = [
+    52.21,  # MKBHD + NYX Professional Makeup
+    75.85,  # MKBHD + Apple
+    62.44,  # Simon Wilson + Skyscanner
+    83.98,  # AN NA + Booking.com
+    60.57,  # NikkieTutorials + Prada
+]
+
+
+def get_risk_category_thresholds() -> dict:
+    """
+    Racuna granice kategorija rizika (nizak/srednji/visok) kao 33. i
+    67. percentil referentnog uzorka finalnih skorova. Ako uzorak nije
+    popunjen, vraca prethodne pretpostavljene vrijednosti (70/45) kao
+    fallback.
+    """
+    if len(_REFERENCE_FINAL_SCORES) < 5:
+        return {"low_threshold": 70, "high_threshold": 45, "source": "pretpostavljeno (nedovoljno podataka)"}
+
+    sorted_scores = sorted(_REFERENCE_FINAL_SCORES)
+    percentiles = statistics.quantiles(sorted_scores, n=3)  # [33. percentil, 67. percentil]
+
+    return {
+        "low_threshold": round(percentiles[1], 2),   # 67. percentil - granica za "Nizak rizik"
+        "high_threshold": round(percentiles[0], 2),  # 33. percentil - granica za "Visok rizik"
+        "source": f"empirijski, n={len(_REFERENCE_FINAL_SCORES)}",
+    }
+
+
 def categorize_risk(score: float) -> str:
-    if score >= 70:
+    thresholds = get_risk_category_thresholds()
+    if score >= thresholds["low_threshold"]:
         return "Nizak rizik"
-    elif score >= 45:
+    elif score >= thresholds["high_threshold"]:
         return "Srednji rizik"
     else:
         return "Visok rizik"
@@ -205,7 +324,7 @@ def calculate_final_risk_score(
     brand_fit_result: dict,
     subscriber_count: int = None,
     weights: dict = None,
-    weights_source: str = "ahp",
+    weights_source: str = "roc",
 ) -> dict:
     """
     Objedinjuje sve module u finalni risk score.
@@ -215,9 +334,9 @@ def calculate_final_risk_score(
         prilagodjen velicini kanala.
     """
     if weights is None:
-        ahp_result = get_module_weights()
-        weights = ahp_result["weights"]
-        weights_source = "ahp"
+        roc_result = get_module_weights()
+        weights = roc_result["weights"]
+        weights_source = "roc"
 
     module_scores = {
         "quantitative": normalize_quantitative_score(quant_metrics, subscriber_count),
@@ -275,7 +394,7 @@ def calculate_bulk_risk_scores(creators_raw_data: list) -> list:
         weights_source = "entropy"
     else:
         weights = get_module_weights()["weights"]
-        weights_source = "ahp"
+        weights_source = "roc"
 
     results = []
     for creator, module_scores in zip(creators_raw_data, all_module_scores):
@@ -326,7 +445,7 @@ if __name__ == "__main__":
         subscriber_count=stats["subscriber_count"],
     )
 
-    print("=== FINALNI RISK SCORE (AHP tezine) ===")
+    print("=== FINALNI RISK SCORE (ROC tezine) ===")
     print(f"Kanal: {stats['title']}")
     print(f"Tezine koriscene: {final_result['weights_used']} (izvor: {final_result['weights_source']})")
     print(f"Skorovi po modulima: {final_result['module_scores']}")

@@ -43,7 +43,7 @@ from .ai_service import analyze_comments_batch
 from .brand_fit import calculate_brand_fit_score
 from .risk_aggregation import calculate_final_risk_score, calculate_bulk_risk_scores
 from .explanation_service import generate_risk_explanation
-from .ahp_service import get_module_weights, MODULE_COMPARISON_MATRIX, MODULE_LABELS
+from .roc_service import get_module_weights, MODULE_RANK_ORDER, MODULE_LABELS
 from .risk_aggregation import RISK_CAP_RULES
 from .brand_research_service import research_brand
 from .transcript_service import get_transcripts_for_videos
@@ -152,10 +152,22 @@ def _compute_audience_health(quant_metrics: dict, sentiment_result: dict) -> dic
     - toxic_pct: % negativnih komentara iz sentiment analize
     """
     ratio = quant_metrics.get("subscriber_to_view_ratio", 0)
-    # Gruba, transparentno obiljezena heuristika: ratio > 10 = 100% "sumnje",
-    # linearno skalirano ispod toga. Ista logika (proizvoljan mnozilac)
-    # kao normalize_authenticity_score - vidi tamo za napomenu o ogranicenju.
-    bot_activity_pct = round(min(ratio * 2, 100), 1)
+    # USKLADJENO sa normalize_authenticity_score (risk_aggregation.py) -
+    # oba mjesta sada koriste isti mnozilac (3) za istu osnovnu ideju
+    # (subscriber-to-view ratio kao proksi autenticnosti/bot aktivnosti).
+    #
+    # METODOLOSKO OGRANICENJE (transparentno, ne skriveno): mnozilac 3
+    # je HEURISTIKA, ne empirijski izveden broj. Pravi akademski
+    # pristup za ovu vrstu proraciuna (Developing a Multimodal Approach
+    # to Channel Characterization on YouTube) NE koristi pretpostavljen
+    # mnozilac - umjesto toga, racuna Cohen's d effect size za svaku
+    # metriku na osnovu STVARNOG dataseta aktivnih i suspendovanih
+    # (potvrdjeno anomalnih) kanala, i koristi taj Cohen's d kao tezinu.
+    # Takav pristup zahtijeva label-ovan dataset poznato-suspendovanih
+    # kanala, sto nadilazi obim ovog rada - vidi napomenu u
+    # normalize_authenticity_score (risk_aggregation.py) i poglavlje
+    # "Ogranicenja i buduci rad".
+    bot_activity_pct = round(min(ratio * 3, 100), 1)
 
     toxic_pct = round(sentiment_result.get("negative_pct", 0), 1)
 
@@ -211,7 +223,7 @@ def get_methodology():
     Namjerna razlika u odnosu na komercijalne alate (CreatorScore,
     HypeAuditor), ciji algoritmi nisu javno objavljeni.
     """
-    ahp_result = get_module_weights()
+    roc_result = get_module_weights()
 
     risk_cap_description = [
         {"name": rule["name"], "cap": rule["cap"]}
@@ -219,15 +231,11 @@ def get_methodology():
     ]
 
     return {
-        "weighting_method": "AHP (Analytic Hierarchy Process) - Saaty (1980, 1987)",
+        "weighting_method": "ROC (Rank Order Centroid) - vidi roc_service.py za obrazlozenje metoda",
         "modules": MODULE_LABELS,
-        "ahp": {
-            "comparison_matrix": ahp_result["comparison_matrix"],
-            "weights": ahp_result["weights"],
-            "lambda_max": ahp_result["lambda_max"],
-            "consistency_index": ahp_result["consistency_index"],
-            "consistency_ratio": ahp_result["consistency_ratio"],
-            "is_consistent": ahp_result["is_consistent"],
+        "roc": {
+            "rank_order": roc_result["rank_order"],
+            "weights": roc_result["weights"],
         },
         "risk_cap_mechanism": {
             "type": "conjunctive / non-compensatory (Einhorn, 1970)",
@@ -242,7 +250,7 @@ def get_methodology():
             "Za analizu vise kreatora odjednom (POST /api/v1/creators/bulk), "
             "koriste se entropijske tezine (Hwang & Yoon, 1981) izracunate "
             "iz tog konkretnog uzorka, kao objektivna alternativa fiksnim "
-            "AHP tezinama."
+            "ROC tezinama."
         ),
     }
 

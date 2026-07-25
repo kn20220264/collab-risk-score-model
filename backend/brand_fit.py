@@ -104,6 +104,8 @@ def calculate_brand_fit_score(brand_description: str, channel_stats: dict, video
     zasnovana na empirijskom ponasanju modela, ne iz objavljenog rada
     - treba ih dodatno kalibrisati testiranjem na vise poznatih parova
     brend-kanal (planirano poglavlje 4.3).
+    
+    
     """
     channel_content = build_channel_content_summary(channel_stats, videos, transcripts=transcripts)
 
@@ -112,8 +114,8 @@ def calculate_brand_fit_score(brand_description: str, channel_stats: dict, video
 
     similarity = cosine_similarity(brand_embedding, channel_embedding)
 
-    MIN_EXPECTED_SIMILARITY = 0.10   # tipicna slicnost dva nepovezana teksta
-    MAX_EXPECTED_SIMILARITY = 0.55   # tipicna slicnost dva veoma bliska teksta
+    MIN_EXPECTED_SIMILARITY = 0.15   # empirijski izvedeno iz sopstvenog kalibracionog testa (n=4 para), poglavlje 4.3
+    MAX_EXPECTED_SIMILARITY = 0.45   # empirijski izvedeno iz sopstvenog kalibracionog testa (n=4 para), poglavlje 4.3
 
     rescaled = (similarity - MIN_EXPECTED_SIMILARITY) / (
         MAX_EXPECTED_SIMILARITY - MIN_EXPECTED_SIMILARITY

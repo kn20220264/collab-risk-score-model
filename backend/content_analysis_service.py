@@ -21,6 +21,23 @@ transcript_service.py - podrazumijevano do 6 najnovijih), jer se psovke
 mogu pouzdano detektovati samo iz stvarnog izgovorenog teksta, ne iz
 naslova/tagova. "posts_analyzed" u odgovoru eksplicitno odrazava taj
 manji uzorak, a ne ukupan broj videa kanala.
+
+METODOLOSKO UPORISTE za zero-shot LLM klasifikaciju sadrzaja: tehnika
+kojom se strukturiran JSON izlaz dobija direktnim promptovanjem velikog
+jezickog modela (bez posebnog treniranja za ovaj konkretan zadatak) je
+utemeljena u: Brown, T.B. et al. (2020). "Language Models are Few-Shot
+Learners" (uvode i demonstriraju few-shot/zero-shot sposobnost GPT-3
+modela za razlicite NLP zadatke, ukljucujuci klasifikaciju), i Wei, J.
+et al. (2022). "Chain-of-Thought Prompting Elicits Reasoning in Large
+Language Models" (pokazuju da strukturirano promptovanje poboljsava
+preciznost zero-shot klasifikacije). Direktan presedan primjene ove
+tehnike na klasifikaciju sadrzaja drustvenih platformi u strukturisan
+JSON izlaz, sa istim obrazlozenjem izbora jeftinijeg/bzeg modela
+(cost-effectiveness, Strict JSON formatting support) je Daranda et al.
+(2025), koji koriste GPT-4o-mini za 18-kategorijsku klasifikaciju
+Telegram kanala. Ovaj rad operacionalizuje istu, vec utemeljenu tehniku
+na novu domenu (kategorizacija YouTube kreator-persone i detekcija
+brend partnerstva), ne uvodi novu metodu klasifikacije.
 """
 
 import os
@@ -136,6 +153,11 @@ Sadrzaj kanala (broj videa sa transkriptom: {posts_with_transcript}/{len(videos)
     response = client.messages.create(
         model=MODEL,
         max_tokens=1200,
+        temperature=0,  # reproducibilnost odgovora - dobra praksa za
+                         # zero-shot LLM klasifikaciju, po uzoru na
+                         # metodologiju u 2411.18383v1.pdf (Nuclear
+                         # Energy Topic Modeling and Sentiment Analysis),
+                         # koji fiksira temperature na 0 iz istog razloga
         messages=[{"role": "user", "content": prompt}],
     )
 
