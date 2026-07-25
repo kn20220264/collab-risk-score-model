@@ -98,6 +98,10 @@ function Analyzer() {
               </div>
             )}
 
+            {result.brand_fit_warning && (
+              <div className="warning-note">{result.brand_fit_warning}</div>
+            )}
+
             <CreatorProfileCard creator={result} />
           </div>
         )}

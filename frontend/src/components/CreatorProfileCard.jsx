@@ -152,6 +152,21 @@ function CreatorProfileCard({ creator }) {
               <IconShield className="icon" /> {risk.label}
             </span>
             <span className="badge badge-score">{creator.score}/100</span>
+            {creator.content_profile_level && (
+              <span
+                className={`badge badge-level ${
+                  creator.content_profile_level === "level_2_with_transcripts" ? "badge-level-2" : "badge-level-1"
+                }`}
+                title={
+                  creator.content_profile_level === "level_2_with_transcripts"
+                    ? "Analiza koristi i transkripte videa, ne samo naslove/tagove"
+                    : "Transkripti nisu bili dostupni - analiza je zasnovana samo na naslovima, tagovima i temama"
+                }
+              >
+                <span className="badge-level-dot" />
+                {creator.content_profile_level === "level_2_with_transcripts" ? "Nivo 2 aktivan" : "Nivo 1 (metapodaci)"}
+              </span>
+            )}
           </div>
 
           {tags.length > 0 && (

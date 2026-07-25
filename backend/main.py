@@ -300,6 +300,8 @@ def get_creator_score(
             "brand_partners": content_analysis.get("brand_partners"),
             "audience_health": audience_health,
             "content_analyzed": content_analyzed,
+            "brand_fit_warning": data["brand_fit_result"].get("warning"),
+            "content_profile_level": data["brand_fit_result"].get("content_profile_level"),
         },
     }
 
