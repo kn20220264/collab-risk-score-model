@@ -35,7 +35,8 @@
 
 .btn-primary {
   background: var(--accent);
-  color: #12151c;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.05), 0 4px 12px rgba(79, 70, 229, 0.18);
 }
 
 .btn-primary:hover {
@@ -64,7 +65,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(18, 21, 28, 0.85);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
 }
@@ -92,7 +93,7 @@
   font-weight: 600;
   font-size: 13px;
   background: var(--accent);
-  color: #12151c;
+  color: #ffffff;
   border-radius: 6px;
   padding: 4px 7px;
 }
@@ -200,6 +201,7 @@
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 22px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.08);
 }
 
 .preview-card-header {
@@ -236,7 +238,7 @@
 }
 
 .pill-low {
-  background: rgba(79, 174, 124, 0.15);
+  background: rgba(22, 163, 74, 0.12);
   color: var(--risk-low);
 }
 
@@ -425,6 +427,7 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px 24px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.06);
 }
 
 .transparency-callout p {
@@ -466,6 +469,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.06);
 }
 
 .field {
@@ -520,6 +524,7 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.06);
 }
 
 .card-title {
@@ -530,15 +535,15 @@
   letter-spacing: 0.05em;
 }
 
-/* Creator profile card (intentionally light-themed, per reference design -
-   contrasts with the dark page background rather than matching it) */
+/* Creator profile card */
 
 .profile-card {
   background: #ffffff;
   color: #111827;
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 28px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 20px 48px rgba(15, 23, 42, 0.08);
 }
 
 .profile-eyebrow {
