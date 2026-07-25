@@ -1,7 +1,8 @@
 import os
+import time
 import numpy as np
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, APIConnectionError, APIStatusError, RateLimitError
 
 load_dotenv()
 
@@ -9,17 +10,33 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 EMBEDDING_MODEL = "text-embedding-3-small"
 
+_EMBEDDING_MAX_RETRIES = 3
+_EMBEDDING_RETRY_BACKOFF_SECONDS = 2
+
 
 def get_embedding(text: str) -> list:
     """
     Vraca embedding vektor za dati tekst.
+
+    Retry sa eksponencijalnim backoff-om za tranzijentne greske
+    OpenAI servera (5xx, rate limit, konekcija) - jedan povremeni
+    500 ne bi trebalo da obori citavu analizu.
     """
     text = text.replace("\n", " ").strip()
-    response = client.embeddings.create(
-        input=text,
-        model=EMBEDDING_MODEL
-    )
-    return response.data[0].embedding
+
+    for attempt in range(_EMBEDDING_MAX_RETRIES):
+        try:
+            response = client.embeddings.create(
+                input=text,
+                model=EMBEDDING_MODEL
+            )
+            return response.data[0].embedding
+        except (APIConnectionError, RateLimitError, APIStatusError) as e:
+            is_last_attempt = attempt == _EMBEDDING_MAX_RETRIES - 1
+            is_retriable = isinstance(e, (APIConnectionError, RateLimitError)) or e.status_code >= 500
+            if is_last_attempt or not is_retriable:
+                raise
+            time.sleep(_EMBEDDING_RETRY_BACKOFF_SECONDS * (2 ** attempt))
 
 
 def cosine_similarity(vec_a: list, vec_b: list) -> float:
