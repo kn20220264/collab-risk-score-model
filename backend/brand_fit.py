@@ -151,6 +151,7 @@ def calculate_brand_fit_score(brand_description: str, channel_stats: dict, video
         "calibration_range": [MIN_EXPECTED_SIMILARITY, MAX_EXPECTED_SIMILARITY],
         "content_profile_level": "level_2_with_transcripts" if transcripts else "level_1_metadata_only",
         "warning": warning,
+        "debug_channel_content": channel_content,
     }
 
 

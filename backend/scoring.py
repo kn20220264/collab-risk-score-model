@@ -13,10 +13,48 @@ Formule i izvori (za poglavlje 4.1 rada):
 - Konzistentnost objavljivanja: prosjek i standardna devijacija razmaka
   (u danima) izmedju uzastopnih objava. Operacionalizacija autora, jer
   ne postoji jedinstvena formalna formula u pregledanoj literaturi.
-- Subscriber-to-view ratio: pretplatnici / prosjecni pregledi.
+- Subscriber-to-view ratio: pretplatnici / CJELOZIVOTNI prosjecni
+  pregledi po videu (vidi VAZNA ISPRAVKA ispod).
   Heuristika inspirisana praksom komercijalnih alata (HypeAuditor,
   CreatorScore) za detekciju "naduvane" baze pratilaca; tacne formule
   tih alata nisu javno objavljene (proprietary).
+
+VAZNA ISPRAVKA (otkrivena testiranjem MKBHD + Samsung i MKBHD + Apple,
+poglavlje 4.3 - "recency bias" problem):
+
+Prethodna verzija racunala je subscriber_to_view_ratio kao odnos
+pretplatnika i PROSJECNIH PREGLEDA POSLEDNJIH N (recentnih) VIDEA:
+
+    avg_views = mean(v["view_count"] for v in videos)  # videos=recentnih 20
+
+Ovo je stvaralo sistematsku, VELICINSKI NEZAVISNU pristrasnost pri
+poredjenju sa referentnom distribucijom (n=625 kanala, Youtube_
+Influencer_Analysis_-_Updated.csv, poglavlje 4.1.3): referentni
+dataset ima MEDIJANU STAROSTI VIDEA OD ~1600 DANA (4.4 godine) - dakle
+videa koji su imali godine da akumuliraju preglede. Nasuprot tome,
+"poslednjih 20 videa" analiziranog kanala su TEK OBJAVLJENI - jos
+uvijek akumuliraju preglede, koji rastu godinama nakon objave. Ovo je
+sistematski naduvavalo (pogorsavalo) ratio SVAKOG kanala analiziranog
+uzivo, nezavisno od velicine ili autenticnosti - "mlad" video se
+neopravdano poredio sa "sazrelim, starim" videima iz referentnog
+skupa.
+
+RJESENJE: subscriber_to_view_ratio se sada racuna kao odnos
+pretplatnika i CJELOZIVOTNOG prosjeka pregleda po videu na nivou
+CIJELOG KANALA (channel_stats["view_count"] / channel_stats
+["video_count"], oba direktno dostupna iz YouTube Data API-ja bez
+dodatnih poziva), a NE prosjeka uzorka od N recentnih videa. Ovo je
+direktno uporedivo sa referentnim CSV-om, koji takodje sadrzi
+cjelozivotne kanal-nivo kolone ("Total Chanel Views", "No of Videos
+the Channel"), na osnovu kojih je i referentna distribucija
+rekonstruisana (vidi risk_aggregation.py, _load_reference_data).
+
+Preostalo ogranicenje (transparentno navedeno): cjelozivotni prosjek
+i dalje ne razlikuje kanal koji je oduvijek imao stabilan doseg od
+onog cija je popularnost naglo opala (ili porasla) - za takvu analizu
+bio bi potreban vremenski niz podataka kroz vise mjeseci/godina, sto
+trenutni jednokratni (snapshot) pipeline ne prikuplja. Navedeno kao
+pravac buduceg istrazivanja (poglavlje 5).
 """
 
 from datetime import datetime
@@ -31,6 +69,14 @@ def calculate_engagement_rate(videos: list) -> float:
     """
     ER = (ukupno lajkova + ukupno komentara) / ukupno pregleda * 100,
     usrednjeno preko poslednjih N videa (Lopez-Navarrete et al., 2021).
+
+    NAPOMENA: ovdje NAMJERNO ostaje "poslednjih N videa" (ne
+    cjelozivotni prosjek) - engagement rate mjeri TRENUTNU angazovanost
+    publike, za koju je najnoviji sadrzaj relevantniji signal od
+    istorijskog prosjeka (vidi troslojni benchmark u
+    risk_aggregation.py, koji je kalibrisan upravo na ovakvom,
+    recentnom shvatanju ER-a). Ispravka opisana na vrhu fajla odnosi se
+    ISKLJUCIVO na subscriber_to_view_ratio, ne na engagement_rate.
     """
     total_likes = sum(v["like_count"] for v in videos)
     total_comments = sum(v["comment_count"] for v in videos)
@@ -110,20 +156,44 @@ def calculate_posting_consistency(videos: list) -> dict:
         "posting_consistency_cv": cv,
     }
 
+
 def calculate_subscriber_to_view_ratio(channel_stats: dict, videos: list) -> float:
     """
-    Odnos pretplatnici : prosjecni pregledi po videu.
+    Odnos pretplatnici : CJELOZIVOTNI prosjecni pregledi po videu.
     Visok odnos moze ukazivati na neaktivnu ili "kupljenu" bazu pratilaca
     u odnosu na stvarni doseg sadrzaja.
+
+    ISPRAVKA (vidi napomenu na vrhu fajla - "recency bias"): koristi
+    channel_stats["view_count"] (ukupan broj pregleda CIJELOG kanala,
+    kroz cijelu istoriju) i channel_stats["video_count"] (ukupan broj
+    objavljenih videa), oba direktno iz YouTube Data API-ja
+    (youtube_service.get_channel_stats), umjesto prosjeka pregleda
+    SAMO poslednjih N (recentnih) videa. Ovo uklanja sistematsku
+    pristrasnost prema "mladim" videima koji jos nisu akumulirali
+    preglede, i cini ratio direktno uporedivim sa referentnom
+    distribucijom (risk_aggregation.py), koja je takodje izracunata na
+    cjelozivotnom, kanal-nivo prosjeku (Total Chanel Views / No of
+    Videos the Channel iz istog CSV-a).
+
+    `videos` parametar se vise ne koristi u samom racunu (zadrzan u
+    potpisu funkcije radi kompatibilnosti poziva u
+    calculate_quantitative_metrics), ali napomena ostaje: broj
+    objavljenih videa iz channel_stats moze biti (blago) veci od
+    broja u `videos` listi, jer `videos` obicno sadrzi samo uzorak
+    (npr. poslednjih 20) - to je ocekivano i namjerno, jer je cilj
+    CIJELA istorija kanala, ne uzorak.
     """
-    if not videos:
+    video_count = channel_stats.get("video_count", 0)
+    total_views = channel_stats.get("view_count", 0)
+
+    if video_count == 0 or total_views == 0:
         return 0.0
 
-    avg_views = mean(v["view_count"] for v in videos)
-    if avg_views == 0:
+    lifetime_avg_views = total_views / video_count
+    if lifetime_avg_views == 0:
         return float("inf")
 
-    return round(channel_stats["subscriber_count"] / avg_views, 2)
+    return round(channel_stats["subscriber_count"] / lifetime_avg_views, 2)
 
 
 def calculate_quantitative_metrics(channel_stats: dict, videos: list) -> dict:
@@ -152,3 +222,6 @@ if __name__ == "__main__":
     print("KVANTITATIVNE METRIKE:")
     for key, value in result.items():
         print(f"  {key}: {value}")
+    print(f"\n(Za provjeru: channel_stats video_count={stats['video_count']}, "
+          f"view_count={stats['view_count']}, lifetime_avg_views="
+          f"{stats['view_count']/stats['video_count']:.0f})")

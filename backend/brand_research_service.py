@@ -34,9 +34,43 @@ citljivost coyjeku. AI obrazlozenje (explanation_service.py) i dalje
 moze da koristi bogatiji, opisniji jezik - ali SAMO opis koji ulazi u
 embedding proracun je sada sveden na jezgro: kategorija, konkretni
 proizvodi/usluge, kljucne teme.
+
+VAZNA ISPRAVKA #2 - REPRODUCIBILNOST (otkrivena testiranjem VOSTCAST +
+Red Bull, poglavlje 4.3 - poznati bug prenesen iz ranijih sesija):
+Ranija verzija ovog modula pozivala je Claude API SVAKI PUT IZNOVA za
+isti naziv brenda, bez ikakvog cuvanja rezultata. Buduci da generisanje
+teksta preko LLM-a nije 100% deterministicko (cak i uz istu instrukciju,
+formulacija/redoslijed recenica moze blago varirati izmedju poziva),
+ovo je proizvodilo RAZLICITE opise brenda za IDENTICAN naziv, sto je
+dalje davalo razlicite embedding vektore i, posljedicno, razlicite
+brand-fit skorove za identican kanal+brend par u uzastopnim pozivima
+(dokumentovano: VOSTCAST+Red Bull je u tri uzastopna poziva dao brand-fit
+skorove 75.18, 99.71 i 89.38 - razlika od skoro 25 poena na identicnom
+ulazu).
+
+Ovo je ozbiljan problem test-retest pouzdanosti (reliability) za alat
+koji sluzi za podrsku odlucivanju - model koji daje razlicite rezultate
+za identican upit tesko je braniti kao pouzdan.
+
+Rjesenje: generisan opis brenda se sad KESIRA (cache) po normalizovanom
+nazivu brenda (lowercase, trim razmaka), u jednostavan JSON fajl na
+disku. Prvi poziv za dati brend generise i cuva opis; svaki naredni
+poziv za ISTI naziv brenda vraca vec sacuvan opis, umjesto da ga
+generise iznova. Ovo garantuje da isti naziv brenda uvijek proizvodi
+identican brand-fit skor za dati kanal (potpuna reproducibilnost),
+dok se generisanje iznova moze eksplicitno zatraziti (force_refresh=True)
+ako korisnik zeli da osvjezi/ispravi opis (npr. nakon rucne provjere ili
+promjene u brendu tokom vremena).
+
+Napomena: keširanje na nivou fajla je namjerno jednostavno rjesenje
+(MVP nivo) - dovoljno za potrebe ovog rada i test-seta kanala. Za
+produkcionu upotrebu sa vise konkurentnih korisnika/procesa, bila bi
+potrebna prava baza podataka (npr. SQLite/Postgres) sa transakcionim
+zakljucavanjem, sto je van obima ovog rada.
 """
 
 import os
+import json
 from dotenv import load_dotenv
 from anthropic import Anthropic
 
@@ -46,16 +80,77 @@ client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 MODEL = "claude-sonnet-4-6"
 
+_CACHE_PATH = os.path.join(os.path.dirname(__file__), "brand_profile_cache.json")
 
-def research_brand(brand_name: str) -> dict:
+
+def _load_cache() -> dict:
+    """
+    Ucitava keš brand profila sa diska. Ako fajl ne postoji (prvo
+    pokretanje aplikacije), vraca prazan rjecnik - bezbjedan fallback.
+    """
+    if os.path.exists(_CACHE_PATH):
+        try:
+            with open(_CACHE_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            # Osteceni/nekompletan fajl (npr. prekid pisanja usred
+            # procesa) - tretiramo kao prazan kes umjesto da srusimo
+            # aplikaciju; sledeci uspjesan _save_cache ce ga popraviti.
+            return {}
+    return {}
+
+
+def _save_cache(cache: dict) -> None:
+    """
+    Cuva ažurirani keš na disk. Piše u privremeni fajl pa ga preimenuje
+    (atomic write) - izbjegava da eventualni pad procesa nasred pisanja
+    ostavi napola upisan, neispravan JSON fajl.
+    """
+    tmp_path = _CACHE_PATH + ".tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, _CACHE_PATH)
+
+
+def _normalize_brand_key(brand_name: str) -> str:
+    """
+    Normalizuje naziv brenda u kljuc za keš (lowercase, trim), tako da
+    "Red Bull", "red bull" i " Red Bull " pogode isti keširani zapis.
+    """
+    return brand_name.strip().lower()
+
+
+def research_brand(brand_name: str, force_refresh: bool = False) -> dict:
     """
     Istrazuje brend preko web pretrage i sastavlja KRATAK,
     PROIZVODNO/TEMATSKI fokusiran opis pogodan za embedding-based
     poredjenje sa sadrzajem kanala.
 
-    Vraca dict sa generisanim opisom, radi transparentnosti u API
-    odgovoru.
+    Rezultat se KEŠIRA po normalizovanom nazivu brenda - prvi poziv za
+    dati brend generise i cuva opis; svaki naredni poziv sa istim
+    nazivom vraca sacuvani opis umjesto da ga generise iznova, cime se
+    garantuje reproducibilnost brand-fit skora za isti kanal+brend par
+    (vidi napomenu o reproducibilnosti na vrhu fajla).
+
+    Parametri:
+        brand_name: naziv brenda koji se istrazuje.
+        force_refresh: ako je True, zaobilazi keš i generise nov opis
+            preko API poziva, cak i ako vec postoji keširan zapis za
+            ovaj naziv (npr. korisnik zeli da rucno osvjezi/ispravi
+            opis, ili je brend promijenio ponudu proizvoda tokom
+            vremena).
+
+    Vraca dict sa generisanim opisom i indikatorom da li je rezultat
+    dosao iz keša (from_cache), radi transparentnosti u API odgovoru.
     """
+    cache_key = _normalize_brand_key(brand_name)
+    cache = _load_cache()
+
+    if not force_refresh and cache_key in cache:
+        cached_result = dict(cache[cache_key])
+        cached_result["from_cache"] = True
+        return cached_result
+
     prompt = f"""Istrazi brend "{brand_name}" koristeci web pretragu.
 
 Sastavi KRATAK opis (30-50 rijeci, STROGO) koji sadrzi SAMO:
@@ -108,10 +203,35 @@ opis na osnovu dostupnih podataka."""
     text_parts = [block.text for block in response.content if block.type == "text"]
     description = " ".join(text_parts).strip()
 
-    return {
+    result = {
+        "brand_name": brand_name,
+        "generated_description": description,
+        "from_cache": False,
+    }
+
+    cache[cache_key] = {
         "brand_name": brand_name,
         "generated_description": description,
     }
+    _save_cache(cache)
+
+    return result
+
+
+def clear_cached_brand(brand_name: str) -> bool:
+    """
+    Uklanja keširani zapis za dati naziv brenda, ako postoji. Korisno
+    za rucno ciscenje pogresno generisanog opisa bez brisanja citavog
+    kesa. Vraca True ako je zapis pronadjen i uklonjen, False inace.
+    """
+    cache_key = _normalize_brand_key(brand_name)
+    cache = _load_cache()
+
+    if cache_key in cache:
+        del cache[cache_key]
+        _save_cache(cache)
+        return True
+    return False
 
 
 # Brzi test
@@ -120,3 +240,9 @@ if __name__ == "__main__":
     print("=== GENERISANI OPIS BRENDA (novi, konkretan format) ===")
     print(result["generated_description"])
     print(f"\nBroj rijeci: {len(result['generated_description'].split())}")
+    print(f"Iz keša: {result['from_cache']}")
+
+    print("\n=== DRUGI POZIV ZA ISTI BREND (treba biti iz keša) ===")
+    result2 = research_brand("Apple")
+    print(f"Isti opis: {result['generated_description'] == result2['generated_description']}")
+    print(f"Iz keša: {result2['from_cache']}")

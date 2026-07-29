@@ -91,13 +91,12 @@ function Hero() {
     <section className={`hero${result ? "" : " hero-centered"}`} id="top">
       <div className="hero-inner">
         <div className="hero-copy">
-          <div className="eyebrow">Procjena rizika brend—kreator saradnje</div>
+          <div className="eyebrow">Procjena rizika saradnje brenda i kreatora</div>
           <h1>
-            Znaj tačno s kim sarađuješ, <span className="accent-text">prije potpisa</span>.
+            Procena rizika poslovnih partnera <span className="accent-text">zasnovana na podacima</span>.
           </h1>
           <p className="hero-subtitle">
-            Unesi YouTube kreatora i brend — dobijaš skor rizika od 0 do 100,
-            sa AI obrazloženjem zašto.
+            Na osnovu podataka o YouTube kreatoru i brendu generiše se skor rizika od 0 do 100, uz AI objašnjenje razloga koji utiču na rezultat.
           </p>
         </div>
 
