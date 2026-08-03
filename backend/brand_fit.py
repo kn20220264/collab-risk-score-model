@@ -9,6 +9,22 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 EMBEDDING_MODEL = "text-embedding-3-small"
+# Kalibracioni opseg izveden iz 144 mjerenja na 36 dokumentovanih
+# parova brend-kreator (Semeradova & Weinlich, 2023, Tabela 2) i 108
+# ukrstenih, kontrolnih parova. Vidi scripts/calibrate_brand_fit.py i
+# backend/reference_brand_fit.json.
+#
+# Donja granica: 5. percentil ukrstenih parova - vrijednost ispod koje
+# pada samo 5% nasumicno sastavljenih parova, dakle prag izrazitog
+# nepoklapanja. Ranije razmatrana medijana ukrstenih (0.2449) odbacena
+# je jer je odsijecala citav donji dio skale: parovi sa slicnoscu 0.20
+# i 0.21 dobijali su identicnu nulu.
+#
+# Gornja granica: 95. percentil stvarnih parova. Otporna na pojedinacni
+# ekstrem (maksimum u uzorku je 0.4957). Ranija vrijednost 0.45 je
+# odsijecala vrh - svaki par iznad nje dobijao je 100 bez razlike.
+MIN_EXPECTED_SIMILARITY = 0.0893
+MAX_EXPECTED_SIMILARITY = 0.3767
 
 _EMBEDDING_MAX_RETRIES = 3
 _EMBEDDING_RETRY_BACKOFF_SECONDS = 2
@@ -129,8 +145,7 @@ def calculate_brand_fit_score(brand_description: str, channel_stats: dict, video
 
     similarity = cosine_similarity(brand_embedding, channel_embedding)
 
-    MIN_EXPECTED_SIMILARITY = 0.15   # empirijski izvedeno iz sopstvenog kalibracionog testa (n=4 para), poglavlje 4.3
-    MAX_EXPECTED_SIMILARITY = 0.45   # empirijski izvedeno iz sopstvenog kalibracionog testa (n=4 para), poglavlje 4.3
+
 
     rescaled = (similarity - MIN_EXPECTED_SIMILARITY) / (
         MAX_EXPECTED_SIMILARITY - MIN_EXPECTED_SIMILARITY
