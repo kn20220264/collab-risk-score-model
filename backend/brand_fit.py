@@ -135,7 +135,7 @@ def calculate_brand_fit_score(brand_description: str, channel_stats: dict, video
     cak ni za genuinski dobro povezane parove. Zato se primjenjuje
     min-max preskaliranje na realisticniji opseg
     [MIN_EXPECTED_SIMILARITY, MAX_EXPECTED_SIMILARITY] - vrijednosti
-    empirijski izvedene iz sopstvenog kalibracionog testa (n=4 para,
+    empirijski izvedene iz sopstvenog kalibracionog testa (n=36 dokumentovanih + 108 ukrštenih parova,
     poglavlje 4.3).
     """
     channel_content = build_channel_content_summary(channel_stats, videos, transcripts=transcripts)
@@ -166,7 +166,7 @@ def calculate_brand_fit_score(brand_description: str, channel_stats: dict, video
         "calibration_range": [MIN_EXPECTED_SIMILARITY, MAX_EXPECTED_SIMILARITY],
         "content_profile_level": "level_2_with_transcripts" if transcripts else "level_1_metadata_only",
         "warning": warning,
-        "debug_channel_content": channel_content,
+       # "debug_channel_content": channel_content,
     }
 
 

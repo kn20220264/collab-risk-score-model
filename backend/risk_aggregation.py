@@ -869,67 +869,114 @@ def build_sentiment_diagnostics(sentiment_result: dict) -> dict:
     }
 
 
+# GRANICE KATEGORIJA RIZIKA
+#
+# Raniji pristup: tercili (33./67. percentil) uzorka od pet rucno
+# izabranih parova. Napusten iz dva razloga.
+#
+# Prvo, kruznost: parove je birao autor, bodovao ih je autorov model, pa
+# su se iz tih bodova izvodile kategorije tog istog modela - model je
+# tako sam definisao sta je za njega normalno.
+#
+# Drugo, nestabilnost: sa n=5 tercil-granice su bukvalno drugi i cetvrti
+# par u nizu, pa je svaka izmjena bilo kog modula pomjerala granice za
+# desetine poena. To se u toku razvoja dogodilo dva puta (prelazak na
+# stratifikovanu autenticnost, pa ispravka brand-fit kalibracije).
+#
+# Sadasnji pristup koristi isti skup parova na kojem je kalibrisan i
+# brand-fit modul (Semeradova & Weinlich, 2023, Tabela 2): 34 stvarna,
+# dokumentovana para i 102 ukrstena, kontrolna para. Postojanje
+# kontrolne grupe mijenja prirodu granica - one vise nisu podjela
+# proizvoljnog uzorka na tri dijela, nego tacke razdvajanja dviju
+# poznatih populacija:
+#
+#   low_threshold  - Youdenov indeks: tacka koja maksimizuje
+#                    J = osjetljivost + specificnost - 1, dakle
+#                    najbolje razdvaja dokumentovane saradnje od
+#                    nasumicno sastavljenih parova. Tri nezavisna
+#                    postupka (75. percentil ukrstenih, tercil svih
+#                    parova, Youden) daju vrijednosti unutar dva
+#                    poena - granica nije osjetljiva na izbor metoda,
+#                    sto je samo po sebi rezultat analize osjetljivosti.
+#
+#   high_threshold - NE izvodi se iz percentila donjeg repa. Risk cap
+#                    pravila obaraju skor na fiksne vrijednosti (30,
+#                    35, 40, 50), pa se u donjem dijelu skale mjerenja
+#                    gomilaju na tim konstantama - percentil bi ocitao
+#                    vrijednost capa, a ne distribuciju. Umjesto toga,
+#                    granica se poravnava sa samim cap sistemom:
+#                    postavlja se iznad najstrozih capova i ispod
+#                    najblazeg, tako da svaki ozbiljan aktiviran cap
+#                    automatski povlaci kategoriju "Visok rizik".
+#                    Nekompenzatorna logika i kategorizacija time
+#                    govore isto, umjesto da budu dva nezavisna
+#                    mehanizma.
+#
+# Granica prihvatljivosti je, u krajnjoj liniji, izraz tolerancije
+# donosioca odluke na rizik, a ne empirijska cinjenica - Duijm (2015)
+# to iznosi eksplicitno, tvrdeci da bojenje matrice rizika predstavlja
+# definiciju rizika samo po sebi. Empirijske granice ovdje sluze kao
+# sidro, ne kao dokaz. Zato uz njih ide i analiza osjetljivosti
+# (poglavlje 4.3).
+#
+# Vrijednosti se ucitavaju iz backend/reference_risk_thresholds.json,
+# koji generise scripts/calibrate_risk_thresholds.py. Skriptu ponovo
+# pokrenuti nakon svake izmjene koja utice na bilo koji modul - time
+# kalibracija postaje reproducibilna procedura umjesto seta brojeva
+# prekucanih u kod.
 # ---------------------------------------------------------------------
-# PERCENTIL-BAZIRANE GRANICE za kategorije rizika - zamjenjuju ranije
-# pretpostavljene granice (70/45) empirijski izvedenim vrijednostima
-# iz sopstvenog testiranog uzorka, po uzoru na Daranda et al. (2026),
-# koji definisu "severity" kategorije kao procentile iz sopstvene
-# distribucije podataka (npr. "High = gornjih 5%").
-#
-# Ovdje se koristi tercil-podjela (donja/gornja granica na 33./67.
-# percentilu) umjesto Daranda-inog asimetricnog razbijanja (5%/15%/
-# 80%), jer je njihov pristup dizajniran za RIJETKE anomalije, dok
-# ovaj model treba da podijeli CIJEL uzorak na tri priblizno jednaka
-# dijela (nizak/srednji/visok rizik) - metodoloska adaptacija istog
-# principa (percentil-bazirano umjesto pretpostavljeno), ne identicna
-# replikacija.
-#
-# Azurirano nakon tri kumulativne izmjene: lifetime-baziran subscriber-
-# to-view ratio (scoring.py), zanrovska korekcija engagement benchmarka
-# (Tabela 10, Rieder et al. 2020), i jednosmjerna authenticity
-# transformacija (samo ratio IZNAD medijane se kaznjava) - vidi
-# poglavlje 4.3. Svih pet skorova ponovo izracunato pod ovom, potpuno
-# azuriranom verzijom koda.
-#
-# NAPOMENA: sa n=5, tercil-granice su osjetljive na svaki pojedinacan
-# par - preporucuje se prosirenje referentnog skupa u buducem radu.
-#
-# NAPOMENA UZ IZMJENU SENTIMENT CAP-a: pet referentnih skorova ispod
-# izracunato je POD RANIJIM sentiment cap pragom (uzorak n=4). Nijedan
-# od pet parova nije aktivirao sentiment cap ni tada ni sada - svi
-# imaju neto sentiment izmedju 10.0 i 48.5, dakle Z izmedju -1.22 i
-# +0.98 pod novom referentnom distribucijom - pa vrijednosti ostaju
-# vazece bez ponovnog racunanja. Ako se u buducnosti doda testni par
-# koji AKTIVIRA sentiment cap, ove granice treba ponovo izracunati.
-# ---------------------------------------------------------------------
-
-_REFERENCE_FINAL_SCORES = [
-    51.5,   # MKBHD + NYX Professional Makeup
-    83.48,  # MKBHD + Apple
-    61.72,  # Simon Wilson + Skyscanner
-    87.08,  # AN NA + Booking.com
-    58.97,  # NikkieTutorials + Prada
-]
-
-
+ 
+_THRESHOLDS_PATH = os.path.join(
+    os.path.dirname(__file__), "reference_risk_thresholds.json"
+)
+ 
+# Granice iz uzorka od pet parova, zadrzane iskljucivo kao rezerva ako
+# kalibracioni fajl nedostaje (npr. pri prvom pokretanju skripte, koja
+# i sama poziva calculate_final_risk_score). Nisu za produkcijsku
+# upotrebu - source polje to jasno oznacava.
+_FALLBACK_THRESHOLDS = {"low_threshold": 83.48, "high_threshold": 58.97}
+ 
+_thresholds_cache = None
+ 
+ 
+def _load_risk_thresholds() -> dict:
+    global _thresholds_cache
+    if _thresholds_cache is not None:
+        return _thresholds_cache
+ 
+    try:
+        with open(_THRESHOLDS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        granice = data["granice"]
+        stvarni = data["stvarni_parovi"]
+        ukrsteni = data["ukrsteni_parovi"]
+ 
+        _thresholds_cache = {
+            "low_threshold": granice["low_threshold"],
+            "high_threshold": granice["high_threshold"],
+            "source": (
+                f"empirijski, kontrolna grupa "
+                f"(n={stvarni['n']} stvarnih / {ukrsteni['n']} ukrstenih)"
+            ),
+            "n_stvarnih": stvarni["n"],
+            "n_ukrstenih": ukrsteni["n"],
+            "cliffs_delta": data.get("validacija", {}).get("cliffs_delta"),
+        }
+    except (FileNotFoundError, KeyError, json.JSONDecodeError):
+        _thresholds_cache = {
+            **_FALLBACK_THRESHOLDS,
+            "source": "rezerva n=5 (kalibracioni fajl nedostupan)",
+        }
+ 
+    return _thresholds_cache
+ 
+ 
 def get_risk_category_thresholds() -> dict:
     """
-    Racuna granice kategorija rizika (nizak/srednji/visok) kao 33. i
-    67. percentil referentnog uzorka finalnih skorova. Ako uzorak nije
-    popunjen, vraca prethodne pretpostavljene vrijednosti (70/45) kao
-    fallback.
+    Vraca granice kategorija rizika izvedene iz kalibracionog skupa sa
+    kontrolnom grupom. Vidi obrazlozenje iznad.
     """
-    if len(_REFERENCE_FINAL_SCORES) < 5:
-        return {"low_threshold": 70, "high_threshold": 45, "source": "pretpostavljeno (nedovoljno podataka)"}
-
-    sorted_scores = sorted(_REFERENCE_FINAL_SCORES)
-    percentiles = statistics.quantiles(sorted_scores, n=3)  # [33. percentil, 67. percentil]
-
-    return {
-        "low_threshold": round(percentiles[1], 2),   # 67. percentil - granica za "Nizak rizik"
-        "high_threshold": round(percentiles[0], 2),  # 33. percentil - granica za "Visok rizik"
-        "source": f"empirijski, n={len(_REFERENCE_FINAL_SCORES)} (PONOVO IZRACUNATI - vidi napomenu iznad)",
-    }
+    return _load_risk_thresholds()
 
 
 def categorize_risk(score: float) -> str:

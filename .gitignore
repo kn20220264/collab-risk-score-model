@@ -222,3 +222,7 @@ __marimo__/
 .streamlit/secrets.toml
 
 backend/brand_profile_cache.json
+
+scripts/.risk_thresholds_cache.json
+
+.brand_fit_cache.json
