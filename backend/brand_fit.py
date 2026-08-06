@@ -1,3 +1,5 @@
+"""Brand-fit modul: semanticko poklapanje opisa brenda i sadrzaja kanala preko embeddinga."""
+
 import os
 import time
 import numpy as np
@@ -9,20 +11,9 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 EMBEDDING_MODEL = "text-embedding-3-small"
-# Kalibracioni opseg izveden iz 144 mjerenja na 36 dokumentovanih
-# parova brend-kreator (Semeradova & Weinlich, 2023, Tabela 2) i 108
-# ukrstenih, kontrolnih parova. Vidi scripts/calibrate_brand_fit.py i
-# backend/reference_brand_fit.json.
-#
-# Donja granica: 5. percentil ukrstenih parova - vrijednost ispod koje
-# pada samo 5% nasumicno sastavljenih parova, dakle prag izrazitog
-# nepoklapanja. Ranije razmatrana medijana ukrstenih (0.2449) odbacena
-# je jer je odsijecala citav donji dio skale: parovi sa slicnoscu 0.20
-# i 0.21 dobijali su identicnu nulu.
-#
-# Gornja granica: 95. percentil stvarnih parova. Otporna na pojedinacni
-# ekstrem (maksimum u uzorku je 0.4957). Ranija vrijednost 0.45 je
-# odsijecala vrh - svaki par iznad nje dobijao je 100 bez razlike.
+
+# Kalibracioni opseg (5. percentil ukrstenih / 95. percentil stvarnih parova)
+# - vidi scripts/calibrate_brand_fit.py i backend/reference_brand_fit.json.
 MIN_EXPECTED_SIMILARITY = 0.0893
 MAX_EXPECTED_SIMILARITY = 0.3767
 
@@ -31,13 +22,7 @@ _EMBEDDING_RETRY_BACKOFF_SECONDS = 2
 
 
 def get_embedding(text: str) -> list:
-    """
-    Vraca embedding vektor za dati tekst.
-
-    Retry sa eksponencijalnim backoff-om za tranzijentne greske
-    OpenAI servera (5xx, rate limit, konekcija) - jedan povremeni
-    500 ne bi trebalo da obori citavu analizu.
-    """
+    """Vraca embedding vektor za dati tekst, sa retry na tranzijentne API greske."""
     text = text.replace("\n", " ").strip()
 
     for attempt in range(_EMBEDDING_MAX_RETRIES):
@@ -56,52 +41,13 @@ def get_embedding(text: str) -> list:
 
 
 def cosine_similarity(vec_a: list, vec_b: list) -> float:
-    """
-    Racuna kosinusnu slicnost izmedju dva vektora (opseg -1 do 1).
-    """
     a = np.array(vec_a)
     b = np.array(vec_b)
     return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
 
 
 def build_channel_content_summary(channel_stats: dict, videos: list, transcripts: dict = None) -> str:
-    """
-    Spaja opis kanala, naslove videa, opise videa, tagove, teme (topic
-    categories) i (opciono) transkript-isjecke u jedan tekst koji
-    predstavlja 'sadrzajni profil' kanala, spreman za embedding.
-
-    NIVO 1 OBOGACIVANJE (dodano nakon testiranja - poglavlje 4.3):
-    Uz naslove videa, ukljucuju se i:
-    - description: pun opis videa (YouTube Data API, snippet.description),
-      skracen na prvih ~100 rijeci. Robusniji, zvanican-API-baziran izvor
-      sadrzaja koji NE zavisi od dostupnosti transkripata (za razliku od
-      Nivo 2) - dostupan za 100% videa, ne samo do 6 najnovijih.
-    - tags: kljucne rijeci koje kreator sam dodaje svakom videu (SEO
-      kategorizacija) - cesto precizniji, gusci semanticki signal nego
-      sami naslovi, jer su birani specificno da opisu temu videa.
-    - topic_categories: Wikipedia-bazirane teme koje YouTube AUTOMATSKI
-      dodjeljuje svakom videu preko topicDetails polja - eksterna,
-      standardizovana kategorizacija (npr. "Technology", "Mobile phone"),
-      nezavisna od kreatorovog subjektivnog izbora rijeci.
-
-    NIVO 2 OBOGACIVANJE (opciono, preko `transcripts` parametra):
-    - transcripts: dict {video_id: transcript_snippet}, iz
-      transcript_service.get_transcripts_for_videos(). Sadrzi kratke
-      isjecke stvarnog govorenog sadrzaja videa (ne samo naslov/tagove),
-      za do N najnovijih videa. Parametar je opcion - ako se ne
-      proslijedi, sadrzajni profil koristi samo Nivo 1 (kompatibilnost
-      unazad).
-
-    Teorijsko uporiste: princip kombinovanja metapodataka i transkripta
-    u jedinstven sadrzajni profil je operacionalizacija pristupa iz
-    "Developing a Multimodal Approach to Channel Characterization on
-    YouTube", koji eksplicitno koristi metapodatke I transkripte kao
-    komplementarne izvore za semanticku analizu kanala. Ocekivani
-    efekat bogaceg konteksta je takodje u skladu sa Bleckmann &
-    Tschisgale (2025) hipotezom da similarity analiza bez okolnog
-    konteksta predstavlja donju granicu (lower-bound) sposobnosti
-    embedding modela.
-    """
+    """Spaja opis kanala, naslove/opise/tagove/teme videa i (opciono) transkript-isjecke u tekst za embedding."""
     parts = [channel_stats.get("description", "")]
 
     for v in videos:
@@ -120,32 +66,13 @@ def build_channel_content_summary(channel_stats: dict, videos: list, transcripts
 
 
 def calculate_brand_fit_score(brand_description: str, channel_stats: dict, videos: list, transcripts: dict = None) -> dict:
-    """
-    Racuna semanticko poklapanje izmedju opisa brenda i sadrzaja kanala.
-    Vraca skor od 0 do 100 (0 = nema poklapanja, 100 = savrseno poklapanje).
-
-    transcripts: opciono, vidi build_channel_content_summary - ako se
-    proslijedi, sadrzajni profil kanala ukljucuje i transkript-isjecke
-    (Nivo 2 obogacivanje), inace se koristi Nivo 1 (naslovi + opisi +
-    tagovi + teme).
-
-    VAZNA ISPRAVKA KALIBRACIJE: sirova kosinusna slicnost izmedju dva
-    RAZLICITA teksta (opis brenda vs. sadrzaj kanala), kod modela
-    text-embedding-3-small, empirijski skoro nikad ne prelazi ~0.5-0.6
-    cak ni za genuinski dobro povezane parove. Zato se primjenjuje
-    min-max preskaliranje na realisticniji opseg
-    [MIN_EXPECTED_SIMILARITY, MAX_EXPECTED_SIMILARITY] - vrijednosti
-    empirijski izvedene iz sopstvenog kalibracionog testa (n=36 dokumentovanih + 108 ukrštenih parova,
-    poglavlje 4.3).
-    """
+    """Racuna semanticko poklapanje brenda i sadrzaja kanala (0-100) preko min-max preskalirane kosinusne slicnosti."""
     channel_content = build_channel_content_summary(channel_stats, videos, transcripts=transcripts)
 
     brand_embedding = get_embedding(brand_description)
     channel_embedding = get_embedding(channel_content)
 
     similarity = cosine_similarity(brand_embedding, channel_embedding)
-
-
 
     rescaled = (similarity - MIN_EXPECTED_SIMILARITY) / (
         MAX_EXPECTED_SIMILARITY - MIN_EXPECTED_SIMILARITY
@@ -166,11 +93,9 @@ def calculate_brand_fit_score(brand_description: str, channel_stats: dict, video
         "calibration_range": [MIN_EXPECTED_SIMILARITY, MAX_EXPECTED_SIMILARITY],
         "content_profile_level": "level_2_with_transcripts" if transcripts else "level_1_metadata_only",
         "warning": warning,
-       # "debug_channel_content": channel_content,
     }
 
 
-# Brzi test
 if __name__ == "__main__":
     from youtube_service import get_channel_stats, get_recent_video_ids, get_videos_stats
     from transcript_service import get_transcripts_for_videos

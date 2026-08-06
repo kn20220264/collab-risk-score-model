@@ -1,35 +1,4 @@
-"""
-Kalibracija referentne distribucije neto sentimenta po kanalu.
-
-SVRHA
------
-Ovaj skript izvodi parametre (mu, sigma) referentne distribucije neto
-sentimenta iz spoljasnjeg dataseta YouTube komentara. Time se prag za
-sentiment risk cap NE postavlja kao proizvoljna konstanta, nego se
-IZVODI dokumentovanim, ponovljivim postupkom - u skladu sa zahtjevom
-iz OECD/JRC prirucnika za kompozitne indikatore (Nardo et al., 2005,
-STD/DOC(2005)3, Korak 7: Robustness and sensitivity), koji trazi da
-budu "dokumentovane i objasnjene analize osjetljivosti i njihovi
-rezultati".
-
-ULAZ
-----
-CSV sa najmanje sljedecim kolonama:
-    channel_username  - identifikator kanala
-    label_sentiment   - jedna od: positive / neutral / negative
-
-VAZNO - PROVENIJENCIJA: prije citiranja rezultata u radu OBAVEZNO
-dopuniti sekciju DATASET_METADATA nize (izvor, autor, godina, licenca,
-metod oznacavanja). Bez toga rezultati nisu citabilni.
-
-IZLAZ
------
-backend/reference_sentiment.json
-
-POKRETANJE
-----------
-    python scripts/calibrate_sentiment_reference.py path/do/dataset.csv
-"""
+"""Kalibracija referentne distribucije (mu, sigma) neto sentimenta po kanalu, iz CSV dataseta komentara."""
 
 import json
 import statistics
@@ -39,9 +8,7 @@ from pathlib import Path
 import pandas as pd
 from scipy import stats
 
-# ---------------------------------------------------------------------
-# METAPODACI O DATASETU - POPUNITI PRIJE CITIRANJA U RADU
-# ---------------------------------------------------------------------
+# Metapodaci o datasetu - popuniti prije citiranja u radu.
 DATASET_METADATA = {
     "naziv": "YouTube Comments Dataset with Sentiment, Toxicity and Spam Labels",
     "izvor_url": "POPUNITI",
@@ -56,27 +23,14 @@ DATASET_METADATA = {
 }
 
 # Minimalan broj komentara po kanalu da bi kanal usao u referentni uzorak.
-# Vrijednost 50 nije proizvoljna: pri manje od ~50 komentara procenti se
-# pomjeraju u koracima od preko 2 procentna poena po komentaru, sto unosi
-# vjestacku varijansu u procjenu sigma. Osjetljivost na ovaj izbor se
-# testira u funkciji sensitivity_analysis() nize i izvjestava u JSON-u.
 MIN_COMMENTS_PER_CHANNEL = 50
 
-# Z-score prag preuzet iz Daranda et al. (2026), fajl: 14_2_01_Daranda.pdf,
-# Tabela 2: "Z-score threshold 2.0 - 95% confidence interval; 11% false
-# positive rate". Isti prag se vec koristi za subscriber-to-view ratio,
-# cime je pristup konzistentan kroz cijeli model.
+# Z-score prag, izvor: Daranda et al. (2026), Tabela 2.
 Z_SCORE_THRESHOLD = 2.0
 
 
 def compute_channel_net_sentiment(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Racuna neto sentiment po kanalu: %pozitivnih - %negativnih.
-
-    Formula je identicna onoj u backend/ai_service.py, cime je osigurano
-    da su referentne vrijednosti i vrijednosti koje alat proizvodi
-    mjerene na istoj skali.
-    """
+    """Racuna neto sentiment po kanalu: %pozitivnih - %negativnih (formula kao u backend/ai_service.py)."""
     counts = (
         df.groupby("channel_username")["label_sentiment"]
         .value_counts()
@@ -95,14 +49,7 @@ def compute_channel_net_sentiment(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def test_normality(values) -> dict:
-    """
-    Shapiro-Wilk test normalnosti.
-
-    Z-score kao metod pretpostavlja priblizno normalnu distribuciju
-    referentne populacije. Ova pretpostavka se ovdje EKSPLICITNO
-    testira, umjesto da se preuti - odgovara Koraku 3 (Multivariate
-    analysis) iz OECD/JRC prirucnika.
-    """
+    """Shapiro-Wilk test normalnosti referentne distribucije."""
     statistic, p_value = stats.shapiro(values)
     return {
         "test": "Shapiro-Wilk",
@@ -118,12 +65,7 @@ def test_normality(values) -> dict:
 
 
 def sensitivity_analysis(counts: pd.DataFrame) -> list:
-    """
-    Analiza osjetljivosti praga na izbor MIN_COMMENTS_PER_CHANNEL.
-
-    Trazeno Korakom 7 OECD/JRC prirucnika: pokazuje koliko izvedeni
-    prag zavisi od jedne metodoloske odluke konstruktora.
-    """
+    """Analiza osjetljivosti praga na izbor MIN_COMMENTS_PER_CHANNEL."""
     results = []
     for min_n in (1, 30, 50, 100, 200):
         subset = counts[counts["n_comments"] >= min_n]["net_sentiment"]

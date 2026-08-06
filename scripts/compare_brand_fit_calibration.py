@@ -1,25 +1,4 @@
-"""
-Poredjenje brand-fit skora pod starom i novom kalibracijom.
-
-Racuna sirovu kosinusnu slicnost za zadati par brend-kanal, pa prikazuje
-kako se ista vrijednost preslikava u skor pod:
-  - STAROM kalibracijom  [0.15, 0.45]  - procjena iz n=4 para
-  - NOVOM kalibracijom   iz reference_brand_fit.json - 144 mjerenja
-    na 36 dokumentovanih parova (Semeradova & Weinlich, 2023)
-
-POKRETANJE (iz korijena repoa)
-------------------------------
-    python scripts/compare_brand_fit_calibration.py @mkbhd "Apple"
-
-Drugi argument je naziv brenda; opis se uzima iz recnika OPISI_BRENDOVA
-nize, ili se moze proslijediti kao treci argument:
-
-    python scripts/compare_brand_fit_calibration.py @mkbhd "Apple" "Tech brand selling..."
-
-NAPOMENA O REPRODUCIBILNOSTI: opisi brendova su ovdje FIKSIRANI, a ne
-generisani pozivom jezickog modela, da bi ponovljeno pokretanje davalo
-istu vrijednost.
-"""
+"""Poredi brand-fit skor za zadati par brend-kanal pod starom [0.15, 0.45] i novom kalibracijom."""
 
 import json
 import sys

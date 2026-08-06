@@ -1,27 +1,4 @@
-"""
-Modul za povlacenje transkripata videa (Nivo 2 obogacivanja sadrzajnog
-profila kanala).
-
-Motivacija i teorijsko uporiste: "Developing a Multimodal Approach to
-Channel Characterization on YouTube" eksplicitno koristi transkripte
-(uz metapodatke) kao dio "multimodal" sadrzajnog profila kanala za
-semanticku analizu - princip koji ovaj modul operacionalizuje u manjem
-obimu. Takodje se nadovezuje na Bleckmann & Tschisgale (2025), koji
-navode da je similarity analiza BEZ okolnog konteksta donja granica
-(lower-bound) sposobnosti embedding modela, i da bogatiji kontekst
-treba da poboljsa performanse - transkript je upravo taj "bogatiji
-kontekst" za sadrzaj videa, u odnosu na sam naslov.
-
-Obim (namjerna dizajn odluka, ne tehnicko ogranicenje): transkripti se
-povlace samo za N NAJNOVIJIH videa (podrazumijevano 6), i samo prvih
-~50 rijeci po videu (otprilike prvih 15-20 sekundi govora, gdje
-kreatori obicno najave temu videa). Ovo je namjeran balans izmedju
-bogatijeg konteksta i vremena izvrsavanja.
-
-Biblioteka: youtube-transcript-api (neslužbena, ali sirok koriscena
-Python biblioteka koja povlaci javno dostupne YouTube titlove -
-automatski generisane ili rucno dodane).
-"""
+"""Povlacenje kratkih transkript-isjecaka za najnovije videe kanala (youtube-transcript-api)."""
 
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import (
@@ -34,16 +11,7 @@ _ytt_api = YouTubeTranscriptApi()
 
 
 def get_video_transcript_snippet(video_id: str, max_words: int = 50) -> str:
-    """
-    Vraca prvih `max_words` rijeci transkripta datog videa.
-    Pokusava prvo engleski, pa srpski/hrvatski/bosanski kao fallback
-    (jezici mogu varirati zavisno od kanala).
-
-    Ako transkript nije dostupan (iskljucen od strane kreatora, video
-    nedostupan, ili ne postoji ni na jednom pokusanom jeziku), vraca
-    prazan string - ne prekida ostatak procesa (isti obrazac kao
-    get_video_comments u youtube_service.py).
-    """
+    """Vraca prvih `max_words` rijeci transkripta (en/sr/hr/bs fallback); prazan string ako nije dostupan."""
     language_attempts = [
         ["en"], ["sr"], ["hr"], ["bs"], ["en-US"], ["en-GB"],
     ]
@@ -63,15 +31,7 @@ def get_video_transcript_snippet(video_id: str, max_words: int = 50) -> str:
 
 
 def get_transcripts_for_videos(video_ids: list, max_videos: int = 6, max_words_per_video: int = 50) -> dict:
-    """
-    Povlaci kratke transkript-isjecke za do `max_videos` NAJNOVIJIH
-    videa iz liste (pretpostavlja se da je video_ids vec sortirana
-    od najnovijeg ka najstarijem, sto je slucaj sa
-    get_recent_video_ids u youtube_service.py).
-
-    Vraca dict {video_id: transcript_snippet}. Video-i bez dostupnog
-    transkripta se izostavljaju iz rezultata.
-    """
+    """Vraca {video_id: transcript_snippet} za prvih `max_videos` iz liste; videi bez transkripta se izostavljaju."""
     transcripts = {}
     for video_id in video_ids[:max_videos]:
         snippet = get_video_transcript_snippet(video_id, max_words=max_words_per_video)
@@ -81,7 +41,6 @@ def get_transcripts_for_videos(video_ids: list, max_videos: int = 6, max_words_p
     return transcripts
 
 
-# Brzi test
 if __name__ == "__main__":
     from youtube_service import get_channel_stats, get_recent_video_ids
 

@@ -1,54 +1,4 @@
-"""
-FastAPI aplikacija - Collab Risk Score API.
-
-Struktura endpoint-a je namjerno inspirisana komercijalnim API-jem
-CreatorScore (creatorscore.io), radi lakseg poredjenja u poglavlju 3
-rada (pregled alata):
-
-- GET /api/v1/creators/youtube/{handle}  - analiza jednog kreatora
-  (analogno GET /api/v1/creators/{platform}/{handle} kod CreatorScore)
-- POST /api/v1/creators/bulk             - analiza vise kreatora odjednom
-  (analogno POST /api/v1/creators/bulk kod CreatorScore), koristi
-  entropijske tezine izracunate iz tog batch-a
-- GET /api/v1/methodology                - transparentan prikaz cijele
-  metodologije (AHP matrica, tezine, CR, risk cap pravila) - ovo je
-  namjerna razlika u odnosu na CreatorScore i slicne komercijalne
-  alate, ciji algoritmi nisu javno objavljeni ("crna kutija"); ovaj
-  endpoint je direktan argument za poglavlje 3 (transparentnost kao
-  prednost akademskog/otvorenog pristupa nasuprot proprietary alatima).
-
-Zadrzan je i stari POST /analyze endpoint (deprecated) radi
-kompatibilnosti sa postojecim frontend-om dok se ne prebaci na novu
-strukturu.
-
-Dodato (Creator Persona / Profanity / Brand Partners / Audience
-Health / Content Analyzed): prosirenje po uzoru na dodatne "agente"
-komercijalnih alata (vidi content_analysis_service.py za detaljno
-metodolosko obrazlozenje).
-
-IZMJENA (poglavlje 4.3 - reproducibilnost brand profila): dodat je
-force_refresh_brand parametar kroz sve endpoint-e koji koriste
-research_brand (automatsko istrazivanje brenda preko naziva). Default
-je False - koristi se KEŠIRAN opis brenda ako postoji (vidi
-brand_research_service.py), sto garantuje da isti naziv brenda uvijek
-proizvodi identican brand-fit skor za dati kanal. Ako korisnik zeli
-svjez opis (npr. brend je promijenio ponudu, ili sumnja da je
-prvobitno generisan opis losiji), moze eksplicitno poslati
-force_refresh_brand=true.
-
-DRUGA IZMJENA (poglavlje 4.3 - zanrovska korekcija kvantitativnog
-benchmarka): analyze_creator_content (koji generise creator_persona,
-ukljucujuci primary_niche) SADA SE POZIVA UNUTAR _gather_and_score,
-PRIJE racunanja risk skora - ne poslije, kao u ranijoj verziji. Razlog:
-calculate_final_risk_score sada prima primary_niche kao opcioni
-parametar, koji koristi za zanrovsku korekciju engagement benchmarka
-(vidi risk_aggregation.py, _engagement_benchmark_for_size). Da bi
-zanr bio dostupan u trenutku racunanja skora, klasifikacija sadrzaja
-mora biti zavrsena PRIJE tog poziva, ne poslije. Ovo je promijenilo
-redoslijed poziva u odnosu na raniju verziju (gdje je content_analysis
-bio pozivan odvojeno, nakon sto je risk_result vec bio izracunat, samo
-za prikaz - sada je dio istog koraka pripreme podataka).
-"""
+"""FastAPI aplikacija - Collab Risk Score API."""
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -91,10 +41,6 @@ app.add_middleware(
 )
 
 
-# ---------------------------------------------------------------------
-# Pydantic modeli
-# ---------------------------------------------------------------------
-
 class AnalyzeRequest(BaseModel):
     channel_handle: str
     brand_description: str
@@ -110,10 +56,6 @@ class BulkCreatorRequest(BaseModel):
 class BulkAnalyzeRequest(BaseModel):
     creators: list[BulkCreatorRequest]
 
-
-# ---------------------------------------------------------------------
-# Interna pomocna funkcija - prikuplja podatke i racuna module za JEDAN kanal
-# ---------------------------------------------------------------------
 
 def _gather_and_score(
     channel_handle: str,
@@ -149,10 +91,6 @@ def _gather_and_score(
     sentiment_result = analyze_comments_batch(comments)
     brand_fit_result = calculate_brand_fit_score(brand_description, stats, videos, transcripts=transcripts)
 
-    # PREMJESTENO OVDJE (ranije se pozivalo tek nakon racunanja risk
-    # skora, samo za prikaz) - creator_persona (zanr) sada mora biti
-    # poznat PRIJE risk skora, jer se koristi za zanrovsku korekciju
-    # kvantitativnog benchmarka (vidi napomenu na vrhu fajla).
     content_analysis = analyze_creator_content(stats, videos, transcripts)
 
     return {
@@ -184,18 +122,7 @@ def _tier_from_score(score: float) -> str:
 
 
 def _compute_audience_health(quant_metrics: dict, sentiment_result: dict, authenticity_score: float) -> dict:
-    """
-    'Audience Health' sekcija (po uzoru na CreatorScore-ovu istoimenu
-    kategoriju) - koristi vec postojece metrike, samo preformulisane
-    u citljiviji format:
-    - bot_activity_pct: sada DIREKTNO izvedeno iz authenticity_score
-      (100 - authenticity_score), umjesto odvojenog racunanja preko
-      ratio*3. USKLADJENO (poglavlje 4.3): ranije je ova metrika
-      koristila stari, nestratifikovan ratio*3 mnozilac, paralelno i
-      nezavisno od normalize_authenticity_score (risk_aggregation.py),
-      koji sada koristi stratifikovan, jednosmjeran percentil pristup.
-    - toxic_pct: % negativnih komentara iz sentiment analize
-    """
+    """'Audience Health' sekcija: bot_activity_pct iz authenticity_score, toxic_pct iz sentimenta."""
     bot_activity_pct = round(100 - authenticity_score, 1)
 
     toxic_pct = round(sentiment_result.get("negative_pct", 0), 1)
@@ -222,20 +149,13 @@ def _compute_audience_health(quant_metrics: dict, sentiment_result: dict, authen
 
 
 def _compute_content_analyzed(quant_metrics: dict, sentiment_result: dict) -> dict:
-    """
-    'Content Analyzed' sekcija - samo pregled obima podataka koriscenih
-    u analizi (transparentnost, ne nova metrika).
-    """
+    """'Content Analyzed' sekcija - obim podataka koriscenih u analizi."""
     return {
         "posts_analyzed": quant_metrics.get("sample_size", 0),
         "comments_analyzed": sentiment_result.get("sample_size", 0),
-        "platforms": 1,  # samo YouTube - eksplicitno, za razliku od multi-platform alata
+        "platforms": 1,  # samo YouTube
     }
 
-
-# ---------------------------------------------------------------------
-# Endpoint-i
-# ---------------------------------------------------------------------
 
 @app.get("/")
 def read_root():
@@ -244,14 +164,7 @@ def read_root():
 
 @app.get("/api/v1/methodology")
 def get_methodology():
-    """
-    Transparentan prikaz cijele metodologije agregacije:
-    - AHP pairwise comparison matrica i izracunate tezine (sa CR)
-    - Risk cap pravila (IF-THEN mapiranje)
-
-    Namjerna razlika u odnosu na komercijalne alate (CreatorScore,
-    HypeAuditor), ciji algoritmi nisu javno objavljeni.
-    """
+    """Transparentan prikaz metodologije: AHP tezine (sa CR) i risk cap pravila."""
     roc_result = get_module_weights()
 
     risk_cap_description = [
@@ -364,13 +277,7 @@ def get_creator_score(
 
 @app.post("/api/v1/creators/bulk")
 def bulk_creator_scores(request: BulkAnalyzeRequest):
-    """
-    Analiza vise kreatora odjednom. Koristi entropijske tezine
-    izracunate iz cijelog batch-a (objektivna alternativa AHP tezinama
-    - vidi entropy_service.py), analogno CreatorScore bulk endpoint-u,
-    uz razliku da je metodologija tezinjenja transparentna i
-    prilagodjena samom uzorku, a ne fiksna.
-    """
+    """Analiza vise kreatora odjednom, koristi entropijske tezine izracunate iz cijelog batch-a."""
     if len(request.creators) > 25:
         raise HTTPException(
             status_code=400,
@@ -393,9 +300,6 @@ def bulk_creator_scores(request: BulkAnalyzeRequest):
         )
         raw_data.append(data)
 
-    # calculate_bulk_risk_scores sada citta creator["creator_persona"]
-    # ["primary_niche"] za zanrovsku korekciju - vec je dio svakog
-    # data dict-a iz _gather_and_score, nema dodatnog koraka potrebno.
     bulk_results = calculate_bulk_risk_scores(raw_data)
 
     results = []
@@ -428,23 +332,11 @@ def bulk_creator_scores(request: BulkAnalyzeRequest):
     }
 
 
-# ---------------------------------------------------------------------
-# Stari endpoint - zadrzan radi kompatibilnosti sa postojecim frontend-om
-# ---------------------------------------------------------------------
+# Stari endpoint (deprecated) - zadrzan radi kompatibilnosti sa postojecim frontend-om
 
 @app.post("/analyze")
 def analyze_channel(request: AnalyzeRequest):
-    """
-    DEPRECATED - koristiti GET /api/v1/creators/youtube/{handle}.
-    Zadrzano dok se frontend ne prebaci na novu strukturu.
-
-    NAPOMENA: ovaj endpoint prima samo brand_description (bez
-    brand_name/force_refresh_brand), pa keširanje brand profila nije
-    relevantno ovdje - opis dolazi direktno od korisnika, ne generise
-    se automatski istrazivanjem. Zanrovska korekcija JESTE aktivna i
-    ovdje (creator_persona se racuna unutar _gather_and_score za sve
-    endpoint-e podjednako).
-    """
+    """DEPRECATED - koristiti GET /api/v1/creators/youtube/{handle}."""
     data = _gather_and_score(request.channel_handle, brand_description=request.brand_description)
 
     primary_niche = (data.get("creator_persona") or {}).get("primary_niche")

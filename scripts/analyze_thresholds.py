@@ -1,15 +1,4 @@
-"""
-Dijagnostika granica kategorija rizika.
-
-Ne poziva nijedan API - cita samo backend/reference_risk_thresholds.json
-koji je vec generisan. Sluzi da se, prije nego sto se granice fiksiraju,
-vidi oblik obje distribucije, popunjenost kategorija pod razlicitim
-kandidatima za granice, i da li se razdvajanje razlikuje po brendu.
-
-POKRETANJE (iz korijena repoa)
-------------------------------
-    python scripts/analyze_thresholds.py
-"""
+"""Dijagnostika granica kategorija rizika iz backend/reference_risk_thresholds.json."""
 
 import json
 import statistics

@@ -1,32 +1,4 @@
-"""
-Test uticaja jezika i formatiranja opisa brenda na kosinusnu slicnost.
-
-PITANJE
--------
-Opisi brendova u kesu generisani su na srpskom, dok se sadrzajni profil
-kanala gradi iz naslova videa i opisa kanala, koji su kod vecine
-testiranih kanala na engleskom. Embedding model jeste visejezican, ali
-se postavlja pitanje da li poredjenje preko jezicke granice sistematski
-snizava izmjerenu slicnost.
-
-Dodatno, generisani opisi sadrze markdown formatiranje (zvjezdice) i
-kod nekih brendova pocinju nazivom brenda, a kod drugih ne - sto ih
-cini medjusobno neuporedivim.
-
-POSTUPAK
---------
-Isti kanal se poredi sa vise varijanti opisa ISTOG brenda:
-  1. srpski, sa markdownom i nazivom brenda (kako je sada u kesu)
-  2. srpski, ocisceno
-  3. engleski, ocisceno
-
-Buduci da je sadrzajni profil kanala u sve tri varijante identican,
-svaka razlika u rezultatu pripisuje se iskljucivo opisu.
-
-POKRETANJE (iz korijena repoa)
-------------------------------
-    python scripts/test_description_language.py "@NikkieTutorials"
-"""
+"""Test uticaja jezika i formatiranja opisa brenda na kosinusnu slicnost sa profilom kanala."""
 
 import sys
 from pathlib import Path
@@ -45,8 +17,7 @@ from backend.brand_fit import (
     cosine_similarity,
 )
 
-# Varijante opisa istog brenda. Sadrzajno ekvivalentne - razlikuju se
-# samo po jeziku i formatiranju.
+# Varijante opisa istog brenda - razlikuju se samo po jeziku i formatiranju.
 VARIJANTE = {
     "Prada": [
         (

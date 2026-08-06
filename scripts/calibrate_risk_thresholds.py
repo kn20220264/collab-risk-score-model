@@ -1,80 +1,4 @@
-"""
-Kalibracija granica kategorija rizika (nizak / srednji / visok).
-
-SVRHA
------
-Zamjenjuje hardkodovanu listu _REFERENCE_FINAL_SCORES (n=5 rucno
-izabranih parova) empirijski izvedenim granicama na 136 parova sa
-KONTROLNOM GRUPOM.
-
-ZASTO n=5 NIJE BILO DOVOLJNO
-----------------------------
-Dva problema, oba ozbiljnija od same velicine uzorka:
-
-1. KRUZNOST. Parove je birao autor, bodovao ih je autorov model, pa su
-   se iz tih bodova izvodile kategorije tog istog modela. Model je tako
-   sam definisao sta je za njega "normalno".
-
-2. NESTABILNOST. Sa n=5, 33. i 67. percentil su bukvalno drugi i cetvrti
-   par u nizu. Svaka izmjena bilo kog modula pomjerala je granice za
-   desetine poena - sto se u toku razvoja dogodilo dva puta.
-
-STO OVAJ PRISTUP MIJENJA
-------------------------
-Koristi se isti skup parova koji je vec upotrijebljen za kalibraciju
-brand-fit modula (Semeradova & Weinlich, 2023, Tabela 2): 34 stvarna,
-dokumentovana para i 102 ukrstena, kontrolna para. Granice se izvode
-kao tacke razdvajanja dviju POZNATIH populacija, a ne kao tercili
-proizvoljnog uzorka:
-
-    low_threshold  = 95. percentil UKRSTENIH parova
-                     (skor iznad kojeg prakticno ne dopire nijedan
-                      nasumicno sastavljen par -> Nizak rizik)
-
-    high_threshold = 5. percentil STVARNIH parova
-                     (skor ispod kojeg ne pada nijedna dokumentovana
-                      saradnja -> Visok rizik)
-
-Srednji pojas je zona preklapanja dviju distribucija - podrucje u kojem
-model ne razlikuje pouzdano. To nije ostatak, nego mjerena nesigurnost.
-
-Postupak je namjerno IDENTICAN onom kojim su izvedene granice
-MIN_EXPECTED_SIMILARITY / MAX_EXPECTED_SIMILARITY u brand_fit.py, samo
-primijenjen jedan nivo vise - na kompozitnom skoru umjesto na
-komponenti. Metodoloska dosljednost kroz rad je sama po sebi argument.
-
-OGRADA KOJU TREBA NAVESTI U RADU
---------------------------------
-"Stvaran par" znaci da je brend tu saradnju izabrao, ne da je bila
-uspjesna. To je iskazana preferencija, ne ishod. Ista pretpostavka je
-vec prihvacena za brand-fit kalibraciju, pa se ovdje ne uvodi nova
-slabost - samo se dosljedno primjenjuje.
-
-STO SE NE RACUNA PONOVO
------------------------
-Kosinusne slicnosti se PREUZIMAJU iz reference_two_component.json
-(polje sim_sadrzaj), gdje su vec izmjerene srpskim opisima brendova -
-istim izvorom koji koristi i aplikacija. Nijedan OpenAI poziv se ne
-pravi. Brand-fit skor se preracunava iz sirove slicnosti trenutnim
-granicama iz brand_fit.py, pa ce se granice automatski uskladiti ako
-se kalibracija brand-fita ikad promijeni.
-
-ZANROVSKA KOREKCIJA - SVJESNO IZOSTAVLJENA
-------------------------------------------
-primary_niche se u produkciji dobija pozivom jezickog modela
-(content_analysis_service), koji je nedeterministican. Ukljucivanje bi
-znacilo da granice nisu reproducibilne. Zato se ovdje prosljedjuje
-primary_niche=None, sto odgovara ponasanju modela kad zanr nije poznat.
-Ovo je ogranicenje koje treba navesti: granice su izvedene bez
-zanrovske korekcije, dok je produkcija sa njom moze imati.
-
-POKRETANJE (iz korijena repoa)
-------------------------------
-    python scripts/calibrate_risk_thresholds.py
-
-Podaci o kanalima se kesiraju u scripts/.risk_thresholds_cache.json,
-pa se skripta moze prekinuti i nastaviti bez trosenja YouTube kvote.
-"""
+"""Kalibracija granica kategorija rizika (nizak/srednji/visok) na parovima sa kontrolnom grupom."""
 
 import json
 import statistics
@@ -101,8 +25,7 @@ HANDLES_PATH = ROOT / "backend" / "reference_brand_fit.json"
 CACHE_PATH = ROOT / "scripts" / ".risk_thresholds_cache.json"
 OUT_PATH = ROOT / "backend" / "reference_risk_thresholds.json"
 
-# Isti parametri kao u produkcijskom pozivu (main.py, _gather_and_score),
-# radi uporedivosti rezultata.
+# Isti parametri kao u produkcijskom pozivu, radi uporedivosti.
 MAX_VIDEOS = 20
 MAX_COMMENTS_PER_VIDEO = 10
 
@@ -121,12 +44,7 @@ def _save_cache(cache: dict) -> None:
 
 
 def fetch_channel_profile(handle: str, cache: dict) -> dict:
-    """
-    Vraca kvantitativne metrike, sentiment i broj pretplatnika kanala.
-
-    Sve tri komponente su na nivou KANALA, pa se racunaju jednom i
-    dijele preko svih parova tog kanala - 36 poziva umjesto 136.
-    """
+    """Vraca (kesirane) kvantitativne metrike, sentiment i broj pretplatnika kanala."""
     if handle in cache:
         return cache[handle]
 
@@ -147,12 +65,7 @@ def fetch_channel_profile(handle: str, cache: dict) -> dict:
 
 
 def rescale_similarity(similarity: float) -> float:
-    """
-    Preracunava sirovu kosinusnu slicnost u brand-fit skor (0-100)
-    trenutnim granicama iz brand_fit.py. Identicna formula kao u
-    calculate_brand_fit_score - ponovljena ovdje da bi se izbjegao
-    OpenAI poziv, jer je slicnost vec izmjerena.
-    """
+    """Preracunava sirovu kosinusnu slicnost u brand-fit skor (0-100) trenutnim granicama iz brand_fit.py."""
     rescaled = (similarity - MIN_EXPECTED_SIMILARITY) / (
         MAX_EXPECTED_SIMILARITY - MIN_EXPECTED_SIMILARITY
     )
@@ -160,10 +73,7 @@ def rescale_similarity(similarity: float) -> float:
 
 
 def percentile(values: list, p: float) -> float:
-    """
-    Percentil po istom obrascu koji koristi scripts/calibrate_brand_fit.py,
-    radi uporedivosti izmedju dvije kalibracije.
-    """
+    """Percentil po istom obrascu kao scripts/calibrate_brand_fit.py."""
     ordered = sorted(values)
     if p <= 0.5:
         idx = max(0, int(p * len(ordered)) - 1)
@@ -189,23 +99,14 @@ def summarize(values: list) -> dict:
 
 
 def cliffs_delta(a: list, b: list) -> float:
-    """
-    Cliffova delta - velicina efekta za razdvajanje dvije grupe.
-    Ista mjera koja je koriscena za validaciju brand-fit modula, pa su
-    dvije validacije direktno uporedive.
-    """
+    """Cliffova delta - velicina efekta za razdvajanje dvije grupe."""
     veci = sum(1 for x in a for y in b if x > y)
     manji = sum(1 for x in a for y in b if x < y)
     return round((veci - manji) / (len(a) * len(b)), 4)
 
 
 def youden_cut(stvarni: list, ukrsteni: list) -> dict:
-    """
-    Jedinstvena granica koja maksimizuje Youdenov indeks
-    J = osjetljivost + specificnost - 1. Racuna se kao dopunska,
-    kontrolna vrijednost - ne koristi se direktno za tri kategorije,
-    ali pokazuje gdje bi lezala optimalna binarna podjela.
-    """
+    """Granica koja maksimizuje Youdenov indeks J = osjetljivost + specificnost - 1."""
     kandidati = sorted(set(stvarni + ukrsteni))
     najbolji = {"cut": None, "J": -1}
     for c in kandidati:
@@ -266,7 +167,7 @@ def main() -> None:
             sentiment_result=p["sentiment_result"],
             brand_fit_result={"brand_fit_score": rescale_similarity(par["sim_sadrzaj"])},
             subscriber_count=p["subscriber_count"],
-            primary_niche=None,  # vidi napomenu u docstringu
+            primary_niche=None,  # nedeterministican u produkciji, izostavljeno radi reproducibilnosti
         )
         skor = rezultat["final_score"]
 
@@ -284,25 +185,12 @@ def main() -> None:
     if len(stvarni) < 10 or len(ukrsteni) < 10:
         raise SystemExit("Premalo uspjesnih parova za kalibraciju.")
 
-    # GORNJA GRANICA (nizak rizik) - Youdenov indeks: tacka koja
-    # maksimizuje J = osjetljivost + specificnost - 1, dakle najbolje
-    # razdvaja dokumentovane saradnje od nasumicno sastavljenih parova.
-    # Izabran nad percentilnim varijantama jer je jedini imenovan,
-    # citabilan kriterijum. Tri nezavisna postupka (p75 ukrstenih,
-    # tercil svih parova, Youden) daju vrijednosti unutar dva poena -
-    # granica nije osjetljiva na izbor metoda.
+    # Gornja granica (nizak rizik): Youdenov indeks
     y = youden_cut(stvarni, ukrsteni)
     low_threshold = y["cut"]
 
-    # DONJA GRANICA (visok rizik) - NE izvodi se iz percentila donjeg
-    # repa. Razlog: risk cap pravila obaraju skor na fiksne vrijednosti
-    # (30, 35, 40, 50), pa se u donjem dijelu skale mjerenja gomilaju na
-    # tim konstantama - percentil bi ocitao vrijednost capa, a ne
-    # distribuciju. Umjesto toga, granica se poravnava sa samim cap
-    # sistemom: postavlja se iznad najstrozih capova i ispod najblazeg,
-    # tako da svaki ozbiljan aktiviran cap automatski povlaci kategoriju
-    # "Visok rizik". Nekompenzatorna logika i kategorizacija time govore
-    # isto, umjesto da budu dva nezavisna mehanizma.
+    # Donja granica (visok rizik): 33. percentil, poravnat sa cap sistemom
+    # da svaki ozbiljan aktiviran cap povlaci kategoriju "Visok rizik"
     capovi = sorted(r["cap"] for r in RISK_CAP_RULES)
     strogi_cap = capovi[-2]      # najvisi od "strogih" capova
     najblazi_cap = capovi[-1]    # blagi brand-fit cap

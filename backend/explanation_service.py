@@ -6,16 +6,11 @@ load_dotenv()
 
 client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
-# Haiku je brz i jeftin model, sasvim dovoljan za generisanje kratkog,
-# strukturiranog izvjestaja na osnovu vec izracunatih metrika.
 MODEL = "claude-haiku-4-5-20251001"
 
 
 def generate_risk_explanation(channel_name: str, brand_description: str, risk_result: dict) -> str:
-    """
-    Generise citljivo tekstualno obrazlozenje risk skora na osnovu
-    vec izracunatih metrika iz svih modula.
-    """
+    """Generise tekstualno obrazlozenje risk skora na osnovu vec izracunatih metrika."""
     prompt = f"""Ti si analiticar za procjenu rizika poslovne saradnje sa YouTube kreatorima.
 
 Kanal: {channel_name}
@@ -45,7 +40,6 @@ NE koristi Markdown formatiranje - bez #, ##, **, -, ni ikakvih drugih specijaln
     return response.content[0].text
 
 
-# Brzi test
 if __name__ == "__main__":
     from youtube_service import get_channel_stats, get_recent_video_ids, get_videos_stats, get_comments_for_videos
     from scoring import calculate_quantitative_metrics

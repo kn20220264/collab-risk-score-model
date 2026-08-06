@@ -1,73 +1,4 @@
-"""
-Modul za automatsko istrazivanje brenda na osnovu samo naziva.
-
-Problem koji rjesava: brand-fit modul (brand_fit.py) racuna cosine
-similarity izmedju embeddinga OPISA BRENDA i sadrzaja kanala. Ako
-korisnik unese samo kratak/nepotpun opis (ili samo naziv), embedding
-tog teksta nosi premalo informacija da bi poredjenje bilo smisleno.
-
-Rjesenje: koristimo Claude API sa ugradjenim web_search alatom da
-AUTOMATSKI sastavimo opis brenda - koji se zatim koristi kao ulaz za
-brand_fit.calculate_brand_fit_score, umjesto korisnikovog sirovog teksta.
-
-VAZNA ISPRAVKA (otkrivena testiranjem, dokumentovano u poglavlju 4.3):
-Prva verzija ovog modula generisala je opise optimizovane za CITLJIVOST
-COVJEKU - ukljucivali su ciljnu demografiju, psihografske segmente,
-filozofiju brendiranja i ton komunikacije (npr. "brend kao zivotni
-stil", "cist, elegantan i nenametljiv ton"). Testiranjem na parovima
-MKBHD+Apple (teorijski gotovo idealan brand-fit slucaj: vodeci tech
-reviewer + najveci tech brend) pokazalo se da ovakav apstraktan,
-marketinski jezik daje NIZU cosine similarity nego kraci, konkretniji
-opis - jer se sadrzaj YouTube kanala (naslovi videa, opis kanala)
-sastoji od KONKRETNIH, PROIZVODNO-ORIJENTISANIH termina (npr. "iPhone
-15 Review"), koji se semanticki bolje poklapaju sa isto tako konkretnim
-opisom proizvoda nego sa apstraktnim opisom brend-filozofije.
-
-Ovo je operacionalizacija poznatog principa iz IR/NLP literature: veca
-duzina teksta sa vise raznorodnih tema (demografija + ton + filozofija)
-"razblazuje" (dilutes) semanticki signal usrednjavanjem, cineci
-embedding manje fokusiranim na kljucne, prepoznatljive koncepte.
-
-Zbog toga je prompt ispod izmijenjen da generise KRACI, PROIZVODNO/
-TEMATSKI fokusiran opis, optimizovan za embedding poredjenje, a ne za
-citljivost coyjeku. AI obrazlozenje (explanation_service.py) i dalje
-moze da koristi bogatiji, opisniji jezik - ali SAMO opis koji ulazi u
-embedding proracun je sada sveden na jezgro: kategorija, konkretni
-proizvodi/usluge, kljucne teme.
-
-VAZNA ISPRAVKA #2 - REPRODUCIBILNOST (otkrivena testiranjem VOSTCAST +
-Red Bull, poglavlje 4.3 - poznati bug prenesen iz ranijih sesija):
-Ranija verzija ovog modula pozivala je Claude API SVAKI PUT IZNOVA za
-isti naziv brenda, bez ikakvog cuvanja rezultata. Buduci da generisanje
-teksta preko LLM-a nije 100% deterministicko (cak i uz istu instrukciju,
-formulacija/redoslijed recenica moze blago varirati izmedju poziva),
-ovo je proizvodilo RAZLICITE opise brenda za IDENTICAN naziv, sto je
-dalje davalo razlicite embedding vektore i, posljedicno, razlicite
-brand-fit skorove za identican kanal+brend par u uzastopnim pozivima
-(dokumentovano: VOSTCAST+Red Bull je u tri uzastopna poziva dao brand-fit
-skorove 75.18, 99.71 i 89.38 - razlika od skoro 25 poena na identicnom
-ulazu).
-
-Ovo je ozbiljan problem test-retest pouzdanosti (reliability) za alat
-koji sluzi za podrsku odlucivanju - model koji daje razlicite rezultate
-za identican upit tesko je braniti kao pouzdan.
-
-Rjesenje: generisan opis brenda se sad KESIRA (cache) po normalizovanom
-nazivu brenda (lowercase, trim razmaka), u jednostavan JSON fajl na
-disku. Prvi poziv za dati brend generise i cuva opis; svaki naredni
-poziv za ISTI naziv brenda vraca vec sacuvan opis, umjesto da ga
-generise iznova. Ovo garantuje da isti naziv brenda uvijek proizvodi
-identican brand-fit skor za dati kanal (potpuna reproducibilnost),
-dok se generisanje iznova moze eksplicitno zatraziti (force_refresh=True)
-ako korisnik zeli da osvjezi/ispravi opis (npr. nakon rucne provjere ili
-promjene u brendu tokom vremena).
-
-Napomena: keširanje na nivou fajla je namjerno jednostavno rjesenje
-(MVP nivo) - dovoljno za potrebe ovog rada i test-seta kanala. Za
-produkcionu upotrebu sa vise konkurentnih korisnika/procesa, bila bi
-potrebna prava baza podataka (npr. SQLite/Postgres) sa transakcionim
-zakljucavanjem, sto je van obima ovog rada.
-"""
+"""Automatsko istrazivanje brenda preko web pretrage; opis se kesira po nazivu brenda radi reproducibilnosti brand-fit skora."""
 
 import os
 import re
@@ -83,32 +14,18 @@ MODEL = "claude-sonnet-4-6"
 
 _CACHE_PATH = os.path.join(os.path.dirname(__file__), "brand_profile_cache.json")
 
-
-
-
 def _load_cache() -> dict:
-    """
-    Ucitava keš brand profila sa diska. Ako fajl ne postoji (prvo
-    pokretanje aplikacije), vraca prazan rjecnik - bezbjedan fallback.
-    """
     if os.path.exists(_CACHE_PATH):
         try:
             with open(_CACHE_PATH, "r", encoding="utf-8") as f:
                 return json.load(f)
         except (json.JSONDecodeError, OSError):
-            # Osteceni/nekompletan fajl (npr. prekid pisanja usred
-            # procesa) - tretiramo kao prazan kes umjesto da srusimo
-            # aplikaciju; sledeci uspjesan _save_cache ce ga popraviti.
             return {}
     return {}
 
 
 def _save_cache(cache: dict) -> None:
-    """
-    Cuva ažurirani keš na disk. Piše u privremeni fajl pa ga preimenuje
-    (atomic write) - izbjegava da eventualni pad procesa nasred pisanja
-    ostavi napola upisan, neispravan JSON fajl.
-    """
+    """Atomic write (tmp fajl + rename)."""
     tmp_path = _CACHE_PATH + ".tmp"
     with open(tmp_path, "w", encoding="utf-8") as f:
         json.dump(cache, f, ensure_ascii=False, indent=2)
@@ -116,56 +33,17 @@ def _save_cache(cache: dict) -> None:
 
 
 def _normalize_brand_key(brand_name: str) -> str:
-    """
-    Normalizuje naziv brenda u kljuc za keš (lowercase, trim), tako da
-    "Red Bull", "red bull" i " Red Bull " pogode isti keširani zapis.
-    """
     return brand_name.strip().lower()
 
 def _clean_description(text: str) -> str:
-    """
-    Uklanja markdown formatiranje i visestruke razmake iz generisanog
-    opisa brenda.
-
-    Opis ulazi direktno u embedding, gdje zvjezdice, prelomi redova i
-    naziv brenda na pocetku predstavljaju semanticki sum. Uocena je i
-    nedosljednost izmedju brendova - za neke je model pocinjao odgovor
-    nazivom brenda, za druge ne - sto je opise cinilo medjusobno
-    neuporedivim.
-
-    Mjereni efekat ciscenja (test na dva para, scripts/
-    test_description_language.py): +0.0042 kod NikkieTutorials x Prada
-    i +0.0181 kod AN NA x Booking.com. Efekat je mali ali dosljedno
-    pozitivan.
-    """
+    """Uklanja markdown i visak razmaka iz opisa (ulazi u embedding)."""
     text = re.sub(r"[*_#`]", "", text)
     text = re.sub(r"\s+", " ", text)
     return text.strip()
 
 
 def research_brand(brand_name: str, force_refresh: bool = False) -> dict:
-    """
-    Istrazuje brend preko web pretrage i sastavlja KRATAK,
-    PROIZVODNO/TEMATSKI fokusiran opis pogodan za embedding-based
-    poredjenje sa sadrzajem kanala.
-
-    Rezultat se KEŠIRA po normalizovanom nazivu brenda - prvi poziv za
-    dati brend generise i cuva opis; svaki naredni poziv sa istim
-    nazivom vraca sacuvani opis umjesto da ga generise iznova, cime se
-    garantuje reproducibilnost brand-fit skora za isti kanal+brend par
-    (vidi napomenu o reproducibilnosti na vrhu fajla).
-
-    Parametri:
-        brand_name: naziv brenda koji se istrazuje.
-        force_refresh: ako je True, zaobilazi keš i generise nov opis
-            preko API poziva, cak i ako vec postoji keširan zapis za
-            ovaj naziv (npr. korisnik zeli da rucno osvjezi/ispravi
-            opis, ili je brend promijenio ponudu proizvoda tokom
-            vremena).
-
-    Vraca dict sa generisanim opisom i indikatorom da li je rezultat
-    dosao iz keša (from_cache), radi transparentnosti u API odgovoru.
-    """
+    """Istrazuje brend preko web pretrage; rezultat se kesira po nazivu brenda. force_refresh zaobilazi kes."""
     cache_key = _normalize_brand_key(brand_name)
     cache = _load_cache()
 
@@ -244,11 +122,7 @@ opis na osnovu dostupnih podataka."""
 
 
 def clear_cached_brand(brand_name: str) -> bool:
-    """
-    Uklanja keširani zapis za dati naziv brenda, ako postoji. Korisno
-    za rucno ciscenje pogresno generisanog opisa bez brisanja citavog
-    kesa. Vraca True ako je zapis pronadjen i uklonjen, False inace.
-    """
+    """Brise keširani zapis za brend, ako postoji."""
     cache_key = _normalize_brand_key(brand_name)
     cache = _load_cache()
 
@@ -259,7 +133,6 @@ def clear_cached_brand(brand_name: str) -> bool:
     return False
 
 
-# Brzi test
 if __name__ == "__main__":
     result = research_brand("Apple")
     print("=== GENERISANI OPIS BRENDA (novi, konkretan format) ===")

@@ -1,35 +1,4 @@
-"""
-Statisticka validacija brand-fit modula.
-
-Odgovara na pitanje koje do sada nije postavljeno: DA LI BRAND-FIT
-MODUL UOPSTE RADI?
-
-HIPOTEZA
---------
-H0: kosinusna slicnost stvarnih parova brend-kreator ne razlikuje se
-    od slicnosti ukrstenih (nasumicnih) parova.
-H1: stvarni parovi imaju sistematski visu slicnost.
-
-Ako se H0 ne odbaci, mjera ne razlikuje poklapanje od nepoklapanja i
-modul koji nosi 52% tezine nema empirijsko opravdanje. Ovo je stoga
-najvazniji test u cijelom modelu.
-
-IZBOR TESTA
------------
-Mann-Whitney U, jednosmjeran. Neparametarski test je izabran jer se
-raspodjela kosinusnih slicnosti ne moze unaprijed pretpostaviti kao
-normalna, a uzorci su mali i nejednake velicine. Uz test se racuna i
-velicina efekta (rank-biserial correlation), jer sama statisticka
-znacajnost ne govori koliko je razlika prakticno bitna.
-
-Dodatno se racuna Cliffov delta, kao intuitivnija mjera: vjerovatnoca
-da nasumicno izabran stvarni par ima visu slicnost od nasumicno
-izabranog ukrstenog para.
-
-POKRETANJE
-----------
-    python scripts/analyze_brand_fit.py
-"""
+"""Statisticka validacija brand-fit modula: Mann-Whitney U test stvarnih vs. ukrstenih parova."""
 
 import json
 import statistics
@@ -42,15 +11,7 @@ DATA_PATH = ROOT / "backend" / "reference_brand_fit.json"
 
 
 def cliffs_delta(a: list, b: list) -> tuple:
-    """
-    Cliffov delta: (P(a>b) - P(a<b)).
-
-    Interpretacija po Romano et al. (2006):
-      |d| < 0.147  zanemarljiv
-      < 0.33       mali
-      < 0.474      srednji
-      >= 0.474     veliki
-    """
+    """Cliffov delta: (P(a>b) - P(a<b))."""
     veci = sum(1 for x in a for y in b if x > y)
     manji = sum(1 for x in a for y in b if x < y)
     ukupno = len(a) * len(b)

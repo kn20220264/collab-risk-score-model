@@ -1,7 +1,6 @@
 from transformers import pipeline
 
-# Model podrzava vise jezika, ukljucujuci engleski - dobar izbor za YouTube komentare
-# koji su cesto mesavina jezika. Model se ucitava jednom pri pokretanju.
+# Viseknjezicni model, ucitava se jednom pri pokretanju.
 _sentiment_pipeline = None
 
 
@@ -16,10 +15,7 @@ def get_sentiment_pipeline():
 
 
 def analyze_comment_sentiment(text: str) -> dict:
-    """
-    Model vraca ocjenu od 1 do 5 zvjezdica (1 = vrlo negativno, 5 = vrlo pozitivno).
-    Mapiramo to na pozitivno/neutralno/negativno.
-    """
+    """Model vraca 1-5 zvjezdica; mapiramo na pozitivno/neutralno/negativno."""
     pipeline_model = get_sentiment_pipeline()
 
     # Model ima limit od 512 karaktera po ulazu
@@ -37,10 +33,7 @@ def analyze_comment_sentiment(text: str) -> dict:
 
 
 def analyze_comments_batch(comments: list) -> dict:
-    """
-    Analizira listu komentara i vraca agregirane rezultate.
-    comments: lista dict-ova sa kljucem 'text'
-    """
+    """Analizira listu komentara (dict-ova sa kljucem 'text') i vraca agregirane rezultate."""
     results = []
     for comment in comments:
         sentiment = analyze_comment_sentiment(comment["text"])
@@ -70,7 +63,6 @@ def analyze_comments_batch(comments: list) -> dict:
     }
 
 
-# Brzi test
 if __name__ == "__main__":
     from youtube_service import get_channel_stats, get_recent_video_ids, get_comments_for_videos
 

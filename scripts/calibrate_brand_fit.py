@@ -1,54 +1,4 @@
-"""
-Kalibracija i validacija brand-fit modula na dokumentovanim parovima.
-
-SVRHA
------
-Zamjenjuje hardkodovane granice MIN_EXPECTED_SIMILARITY (0.15) i
-MAX_EXPECTED_SIMILARITY (0.45), koje su izvedene iz uzorka od n=4 para,
-vrijednostima dobijenim na 36 dokumentovanih parova brend-kreator iz
-objavljenog rada, uz priblizno 100 ukrstenih (kontrolnih) parova.
-
-DVA CILJA
----------
-1. KALIBRACIJA: empirijski raspon kosinusne slicnosti, umjesto procjene.
-2. VALIDACIJA: provjera da li model razlikuje stvarne od ukrstenih
-   parova. Ovo je diskriminantna validnost - dokaz da mjera hvata ono
-   sto tvrdi da hvata. Bez nje, brand-fit modul (52% tezine) nema
-   nijedan dokaz da uopste radi.
-
-IZVOR PAROVA
-------------
-Semeradova, T. & Weinlich, P. (2023). Development of an
-Influencer-Brand Congruence Measurement Framework for Recommender
-Systems. SSRN preprint 4388448, Tabela 2.
-
-Kanali su tamo birani po kriterijumu PONOVLJENE, uspjesne saradnje sa
-brendom, sto se ovdje uzima kao indikator dobrog poklapanja.
-
-VAZNA OGRADA: pretpostavka "stvarna saradnja = dobro poklapanje" nije
-jednako jaka za sva cetiri brenda. ThredUp i Function of Beauty su
-niche brendovi ciji su kanali tematski bliski. Audible i Skillshare su
-u posmatranom periodu sponzorisali kanale iz vrlo razlicitih oblasti
-(medicina, jedrenje, sah, ASMR), sto je blize masovnom oglasavanju nego
-tematskom poklapanju. Zato skripta izvjestava rezultate I ZBIRNO I PO
-BRENDU - razlika medju brendovima je nalaz, ne greska.
-
-REPRODUCIBILNOST
-----------------
-Opisi brendova su FIKSIRANI u brand_fit_pairs.json i NE generisu se
-pozivom jezickog modela. Time se zaobilazi poznati problem
-nedeterministickih opisa (brand_research_service.py), koji za isti ulaz
-proizvodi razlicite embeddinge i time razlicite skorove.
-
-Podaci o kanalima se kesiraju na disk, pa se skripta moze prekinuti i
-nastaviti bez ponovnog trosenja API kvote.
-
-POKRETANJE (iz korijena repoa)
-------------------------------
-    python scripts/calibrate_brand_fit.py
-
-Prije pokretanja popuniti polje "handle" u scripts/brand_fit_pairs.json.
-"""
+"""Kalibracija brand-fit opsega [min, max] na dokumentovanim parovima brend-kreator (Semeradova & Weinlich, 2023)."""
 
 import json
 import os
@@ -96,14 +46,7 @@ def _save_cache(cache: dict) -> None:
 
 
 def fetch_channel_embedding(handle: str, cache: dict) -> list:
-    """
-    Vraca embedding sadrzajnog profila kanala.
-
-    Kesira se da bi se izbjeglo ponovno trosenje YouTube kvote i
-    OpenAI poziva pri ponovnom pokretanju. Embedding kanala se racuna
-    JEDNOM, pa se poredi sa sva cetiri brenda - time je broj poziva
-    36 + 4 umjesto 144.
-    """
+    """Vraca (kesirani) embedding sadrzajnog profila kanala."""
     if handle in cache:
         return cache[handle]
 
@@ -198,10 +141,7 @@ def main() -> None:
     stvarni = [r["cosine_similarity"] for r in rezultati if r["stvarni_par"]]
     ukrsteni = [r["cosine_similarity"] for r in rezultati if not r["stvarni_par"]]
 
-    # Kalibracioni opseg:
-    #   donja granica = medijana ukrstenih parova (tipicno nepoklapanje)
-    #   gornja granica = 95. percentil stvarnih parova (vrlo dobro
-    #   poklapanje, bez oslanjanja na jedan ekstrem)
+    # donja = medijana ukrstenih, gornja = p95 stvarnih parova
     donja = round(statistics.median(ukrsteni), 4) if ukrsteni else None
     gornja = summarize(stvarni).get("p95")
 
