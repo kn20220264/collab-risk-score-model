@@ -1,0 +1,1136 @@
+{
+  "_opis": "Kalibracija brand-fit modula. Generisano skriptom scripts/calibrate_brand_fit.py - ne uredjivati rucno.",
+  "izvor_parova": "Semerádová, T. & Weinlich, P. (2023). Development of an Influencer-Brand Congruence Measurement Framework for Recommender Systems. SSRN preprint 4388448, Tabela 2. Kanali su birani po kriterijumu ponovljene, uspjesne saradnje sa navedenim brendom.",
+  "parametri": {
+    "max_videos": 20,
+    "max_transcripts": 6,
+    "parova_pokusano": 36,
+    "parova_uspjesno": 36,
+    "neuspjeli_kanali": []
+  },
+  "stvarni_parovi": {
+    "n": 36,
+    "mean": 0.3062,
+    "std": 0.0738,
+    "median": 0.2894,
+    "min": 0.1733,
+    "max": 0.4957,
+    "p05": 0.1733,
+    "p95": 0.4689
+  },
+  "ukrsteni_parovi": {
+    "n": 108,
+    "mean": 0.2492,
+    "std": 0.0489,
+    "median": 0.2449,
+    "min": 0.154,
+    "max": 0.3782,
+    "p05": 0.1674,
+    "p95": 0.3441
+  },
+  "kalibracioni_opseg": {
+    "min_expected_similarity": 0.2449,
+    "max_expected_similarity": 0.4689,
+    "obrazlozenje": "Donja granica = medijana ukrstenih parova (tipicna vrijednost pri nepoklapanju). Gornja granica = 95. percentil stvarnih parova (vrlo dobro poklapanje, otporno na pojedinacni ekstrem)."
+  },
+  "po_brendu": {
+    "ThredUp": {
+      "stvarni": {
+        "n": 9,
+        "mean": 0.322,
+        "std": 0.0916,
+        "median": 0.2867,
+        "min": 0.1733,
+        "max": 0.4689,
+        "p05": 0.1733,
+        "p95": 0.4689
+      },
+      "ukrsteni": {
+        "n": 27,
+        "mean": 0.2341,
+        "std": 0.0545,
+        "median": 0.2287,
+        "min": 0.1555,
+        "max": 0.3761,
+        "p05": 0.1555,
+        "p95": 0.3441
+      }
+    },
+    "Audible": {
+      "stvarni": {
+        "n": 9,
+        "mean": 0.2687,
+        "std": 0.0368,
+        "median": 0.2784,
+        "min": 0.2219,
+        "max": 0.3275,
+        "p05": 0.2219,
+        "p95": 0.3275
+      },
+      "ukrsteni": {
+        "n": 27,
+        "mean": 0.2429,
+        "std": 0.0391,
+        "median": 0.242,
+        "min": 0.1674,
+        "max": 0.3385,
+        "p05": 0.1674,
+        "p95": 0.2964
+      }
+    },
+    "Skillshare": {
+      "stvarni": {
+        "n": 9,
+        "mean": 0.2847,
+        "std": 0.0367,
+        "median": 0.2738,
+        "min": 0.2208,
+        "max": 0.3493,
+        "p05": 0.2208,
+        "p95": 0.3493
+      },
+      "ukrsteni": {
+        "n": 27,
+        "mean": 0.2426,
+        "std": 0.0367,
+        "median": 0.245,
+        "min": 0.154,
+        "max": 0.3411,
+        "p05": 0.154,
+        "p95": 0.2927
+      }
+    },
+    "Function of Beauty": {
+      "stvarni": {
+        "n": 9,
+        "mean": 0.3496,
+        "std": 0.0909,
+        "median": 0.328,
+        "min": 0.2247,
+        "max": 0.4957,
+        "p05": 0.2247,
+        "p95": 0.4957
+      },
+      "ukrsteni": {
+        "n": 27,
+        "mean": 0.2773,
+        "std": 0.0534,
+        "median": 0.2716,
+        "min": 0.1814,
+        "max": 0.3782,
+        "p05": 0.1814,
+        "p95": 0.3719
+      }
+    }
+  },
+  "sve_kombinacije": [
+    {
+      "kanal": "Abbey Yung",
+      "handle": "@AbbeyYung",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "cosine_similarity": 0.4957
+    },
+    {
+      "kanal": "Hannah - The Outfit Repeater",
+      "handle": "@theoutfitrepeater",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "cosine_similarity": 0.4689
+    },
+    {
+      "kanal": "Hazel Goddesss",
+      "handle": "@HazelGoddesss",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "cosine_similarity": 0.4606
+    },
+    {
+      "kanal": "Carrie Dayton",
+      "handle": "@CarrieDayton",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "cosine_similarity": 0.4351
+    },
+    {
+      "kanal": "Bekah & Co.",
+      "handle": "@Bekah_HairPro",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "cosine_similarity": 0.4222
+    },
+    {
+      "kanal": "aliyah simone",
+      "handle": "@aliyahsimone",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.3782
+    },
+    {
+      "kanal": "TomKat Stitchery",
+      "handle": "@TomKatStitchery",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.3761
+    },
+    {
+      "kanal": "Danielle Kirsty",
+      "handle": "@DanielleKirsty",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.3719
+    },
+    {
+      "kanal": "Mia Maples",
+      "handle": "@MiaMaples",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.3577
+    },
+    {
+      "kanal": "Mia Maples",
+      "handle": "@MiaMaples",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "cosine_similarity": 0.3562
+    },
+    {
+      "kanal": "Morgan Donner",
+      "handle": "@MorganDonner",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "cosine_similarity": 0.3559
+    },
+    {
+      "kanal": "The Bite Shot",
+      "handle": "@TheBiteShot",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "cosine_similarity": 0.3493
+    },
+    {
+      "kanal": "Hannah Harrell",
+      "handle": "@Hannahtharrell",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.3461
+    },
+    {
+      "kanal": "Bernadette Banner",
+      "handle": "@bernadettebanner",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.3441
+    },
+    {
+      "kanal": "Ellen Fisher",
+      "handle": "@EllenFisher",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.3415
+    },
+    {
+      "kanal": "Jazza",
+      "handle": "@Jazza",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.3411
+    },
+    {
+      "kanal": "Plant Based Bride",
+      "handle": "@PlantBasedBride",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.3385
+    },
+    {
+      "kanal": "Glam&Gore",
+      "handle": "@mykie",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "cosine_similarity": 0.3345
+    },
+    {
+      "kanal": "Emma Chamberlain",
+      "handle": "@emmachamberlain",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.3282
+    },
+    {
+      "kanal": "Kenna",
+      "handle": "@KennaMarie",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "cosine_similarity": 0.328
+    },
+    {
+      "kanal": "Carrie Dayton",
+      "handle": "@CarrieDayton",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.3276
+    },
+    {
+      "kanal": "Gibi ASMR",
+      "handle": "@GibiASMR",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "cosine_similarity": 0.3275
+    },
+    {
+      "kanal": "Dr Dray",
+      "handle": "@DrDrayzday",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "cosine_similarity": 0.3218
+    },
+    {
+      "kanal": "Abby Cox",
+      "handle": "@AbbyCox",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.3126
+    },
+    {
+      "kanal": "aliyah simone",
+      "handle": "@aliyahsimone",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "cosine_similarity": 0.3078
+    },
+    {
+      "kanal": "Katnipp",
+      "handle": "@KatnippStudios",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "cosine_similarity": 0.3067
+    },
+    {
+      "kanal": "Jenna Hong",
+      "handle": "@JennaHong",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.3041
+    },
+    {
+      "kanal": "TomKat Stitchery",
+      "handle": "@TomKatStitchery",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "cosine_similarity": 0.303
+    },
+    {
+      "kanal": "Doctor Mike",
+      "handle": "@DoctorMike",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2983
+    },
+    {
+      "kanal": "REGRETLYSS",
+      "handle": "@REGRETLYSS",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2964
+    },
+    {
+      "kanal": "Gibi ASMR",
+      "handle": "@GibiASMR",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.296
+    },
+    {
+      "kanal": "aliyah simone",
+      "handle": "@aliyahsimone",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2943
+    },
+    {
+      "kanal": "Bernadette Banner",
+      "handle": "@bernadettebanner",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2927
+    },
+    {
+      "kanal": "Primink",
+      "handle": "@Primink",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2909
+    },
+    {
+      "kanal": "Sailing La Vagabonde",
+      "handle": "@SailingLaVagabonde",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2905
+    },
+    {
+      "kanal": "Dong ASMR",
+      "handle": "@DongASMR",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2895
+    },
+    {
+      "kanal": "Abby Cox",
+      "handle": "@AbbyCox",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2894
+    },
+    {
+      "kanal": "Hannah Harrell",
+      "handle": "@Hannahtharrell",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2867
+    },
+    {
+      "kanal": "Jenna Hong",
+      "handle": "@JennaHong",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2857
+    },
+    {
+      "kanal": "Emma Chamberlain",
+      "handle": "@emmachamberlain",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2856
+    },
+    {
+      "kanal": "TomKat Stitchery",
+      "handle": "@TomKatStitchery",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2855
+    },
+    {
+      "kanal": "Mia Maples",
+      "handle": "@MiaMaples",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2854
+    },
+    {
+      "kanal": "Katnipp",
+      "handle": "@KatnippStudios",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2847
+    },
+    {
+      "kanal": "Glam&Gore",
+      "handle": "@mykie",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2842
+    },
+    {
+      "kanal": "Mia Maples",
+      "handle": "@MiaMaples",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2827
+    },
+    {
+      "kanal": "REGRETLYSS",
+      "handle": "@REGRETLYSS",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2825
+    },
+    {
+      "kanal": "Ellen Fisher",
+      "handle": "@EllenFisher",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2822
+    },
+    {
+      "kanal": "Ellen Fisher",
+      "handle": "@EllenFisher",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2807
+    },
+    {
+      "kanal": "Jazza",
+      "handle": "@Jazza",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2784
+    },
+    {
+      "kanal": "Ellen Fisher",
+      "handle": "@EllenFisher",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2774
+    },
+    {
+      "kanal": "Emma Chamberlain",
+      "handle": "@emmachamberlain",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "cosine_similarity": 0.275
+    },
+    {
+      "kanal": "Glam&Gore",
+      "handle": "@mykie",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.275
+    },
+    {
+      "kanal": "Jenna Hong",
+      "handle": "@JennaHong",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2738
+    },
+    {
+      "kanal": "Primink",
+      "handle": "@Primink",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2721
+    },
+    {
+      "kanal": "Hannah - The Outfit Repeater",
+      "handle": "@theoutfitrepeater",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2716
+    },
+    {
+      "kanal": "aliyah simone",
+      "handle": "@aliyahsimone",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2714
+    },
+    {
+      "kanal": "Rachel Maksy",
+      "handle": "@rachelmaksy",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2692
+    },
+    {
+      "kanal": "Bernadette Banner",
+      "handle": "@bernadettebanner",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2692
+    },
+    {
+      "kanal": "Irene Rudnyk",
+      "handle": "@IreneRudnyk",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2691
+    },
+    {
+      "kanal": "Rachel Maksy",
+      "handle": "@rachelmaksy",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2646
+    },
+    {
+      "kanal": "Primink",
+      "handle": "@Primink",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2635
+    },
+    {
+      "kanal": "Katnipp",
+      "handle": "@KatnippStudios",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2634
+    },
+    {
+      "kanal": "Gibi ASMR",
+      "handle": "@GibiASMR",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2627
+    },
+    {
+      "kanal": "Abbey Yung",
+      "handle": "@AbbeyYung",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2627
+    },
+    {
+      "kanal": "Carrie Dayton",
+      "handle": "@CarrieDayton",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.262
+    },
+    {
+      "kanal": "Primink",
+      "handle": "@Primink",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2597
+    },
+    {
+      "kanal": "REGRETLYSS",
+      "handle": "@REGRETLYSS",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2596
+    },
+    {
+      "kanal": "Bekah & Co.",
+      "handle": "@Bekah_HairPro",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.259
+    },
+    {
+      "kanal": "Strange Parts",
+      "handle": "@StrangeParts",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2587
+    },
+    {
+      "kanal": "The Bite Shot",
+      "handle": "@TheBiteShot",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2585
+    },
+    {
+      "kanal": "Danielle Kirsty",
+      "handle": "@DanielleKirsty",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2566
+    },
+    {
+      "kanal": "Katnipp",
+      "handle": "@KatnippStudios",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2566
+    },
+    {
+      "kanal": "Dong ASMR",
+      "handle": "@DongASMR",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2562
+    },
+    {
+      "kanal": "Hannah - The Outfit Repeater",
+      "handle": "@theoutfitrepeater",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2549
+    },
+    {
+      "kanal": "Jazza",
+      "handle": "@Jazza",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2539
+    },
+    {
+      "kanal": "Strange Parts",
+      "handle": "@StrangeParts",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2536
+    },
+    {
+      "kanal": "Danielle Kirsty",
+      "handle": "@DanielleKirsty",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "cosine_similarity": 0.252
+    },
+    {
+      "kanal": "Abbey Yung",
+      "handle": "@AbbeyYung",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2503
+    },
+    {
+      "kanal": "Rachel Maksy",
+      "handle": "@rachelmaksy",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2487
+    },
+    {
+      "kanal": "Hazel Goddesss",
+      "handle": "@HazelGoddesss",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2479
+    },
+    {
+      "kanal": "Eric Rosen",
+      "handle": "@eric-rosen",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2465
+    },
+    {
+      "kanal": "Abby Cox",
+      "handle": "@AbbyCox",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2463
+    },
+    {
+      "kanal": "Kenna",
+      "handle": "@KennaMarie",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2456
+    },
+    {
+      "kanal": "Morgan Donner",
+      "handle": "@MorganDonner",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.245
+    },
+    {
+      "kanal": "Glam&Gore",
+      "handle": "@mykie",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2448
+    },
+    {
+      "kanal": "Plant Based Bride",
+      "handle": "@PlantBasedBride",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2445
+    },
+    {
+      "kanal": "Sailing La Vagabonde",
+      "handle": "@SailingLaVagabonde",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.244
+    },
+    {
+      "kanal": "Morgan Donner",
+      "handle": "@MorganDonner",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2436
+    },
+    {
+      "kanal": "Rachel Maksy",
+      "handle": "@rachelmaksy",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2434
+    },
+    {
+      "kanal": "Bekah & Co.",
+      "handle": "@Bekah_HairPro",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.242
+    },
+    {
+      "kanal": "The Bite Shot",
+      "handle": "@TheBiteShot",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2419
+    },
+    {
+      "kanal": "Abbey Yung",
+      "handle": "@AbbeyYung",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2415
+    },
+    {
+      "kanal": "Bernadette Banner",
+      "handle": "@bernadettebanner",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2393
+    },
+    {
+      "kanal": "Hannah - The Outfit Repeater",
+      "handle": "@theoutfitrepeater",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2391
+    },
+    {
+      "kanal": "Doctor Mike",
+      "handle": "@DoctorMike",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2367
+    },
+    {
+      "kanal": "Strange Parts",
+      "handle": "@StrangeParts",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2363
+    },
+    {
+      "kanal": "Plant Based Bride",
+      "handle": "@PlantBasedBride",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2327
+    },
+    {
+      "kanal": "Hannah Harrell",
+      "handle": "@Hannahtharrell",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2322
+    },
+    {
+      "kanal": "Bekah & Co.",
+      "handle": "@Bekah_HairPro",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2308
+    },
+    {
+      "kanal": "Carrie Dayton",
+      "handle": "@CarrieDayton",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2306
+    },
+    {
+      "kanal": "Emma Chamberlain",
+      "handle": "@emmachamberlain",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2299
+    },
+    {
+      "kanal": "Jenna Hong",
+      "handle": "@JennaHong",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.229
+    },
+    {
+      "kanal": "Sailing La Vagabonde",
+      "handle": "@SailingLaVagabonde",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2288
+    },
+    {
+      "kanal": "Strange Parts",
+      "handle": "@StrangeParts",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2287
+    },
+    {
+      "kanal": "Dong ASMR",
+      "handle": "@DongASMR",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2268
+    },
+    {
+      "kanal": "Doctor Mike",
+      "handle": "@DoctorMike",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2251
+    },
+    {
+      "kanal": "Anjeez",
+      "handle": "@Anjeez",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2247
+    },
+    {
+      "kanal": "Eric Rosen",
+      "handle": "@eric-rosen",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2241
+    },
+    {
+      "kanal": "KianAndJc",
+      "handle": "@KianAndJc",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2219
+    },
+    {
+      "kanal": "Irene Rudnyk",
+      "handle": "@IreneRudnyk",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2211
+    },
+    {
+      "kanal": "Plant Based Bride",
+      "handle": "@PlantBasedBride",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "cosine_similarity": 0.2208
+    },
+    {
+      "kanal": "TomKat Stitchery",
+      "handle": "@TomKatStitchery",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2193
+    },
+    {
+      "kanal": "Anjeez",
+      "handle": "@Anjeez",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2179
+    },
+    {
+      "kanal": "Anjeez",
+      "handle": "@Anjeez",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2177
+    },
+    {
+      "kanal": "Sailing La Vagabonde",
+      "handle": "@SailingLaVagabonde",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2171
+    },
+    {
+      "kanal": "Hannah Harrell",
+      "handle": "@Hannahtharrell",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2169
+    },
+    {
+      "kanal": "Danielle Kirsty",
+      "handle": "@DanielleKirsty",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2151
+    },
+    {
+      "kanal": "REGRETLYSS",
+      "handle": "@REGRETLYSS",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2137
+    },
+    {
+      "kanal": "Gibi ASMR",
+      "handle": "@GibiASMR",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2135
+    },
+    {
+      "kanal": "Abby Cox",
+      "handle": "@AbbyCox",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2108
+    },
+    {
+      "kanal": "Dr Dray",
+      "handle": "@DrDrayzday",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2072
+    },
+    {
+      "kanal": "KianAndJc",
+      "handle": "@KianAndJc",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2065
+    },
+    {
+      "kanal": "Morgan Donner",
+      "handle": "@MorganDonner",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2061
+    },
+    {
+      "kanal": "Hazel Goddesss",
+      "handle": "@HazelGoddesss",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2059
+    },
+    {
+      "kanal": "KianAndJc",
+      "handle": "@KianAndJc",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2054
+    },
+    {
+      "kanal": "Hazel Goddesss",
+      "handle": "@HazelGoddesss",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2054
+    },
+    {
+      "kanal": "THE WADS",
+      "handle": "@KimberlyWhisk",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2018
+    },
+    {
+      "kanal": "Kenna",
+      "handle": "@KennaMarie",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.2006
+    },
+    {
+      "kanal": "Anjeez",
+      "handle": "@Anjeez",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1984
+    },
+    {
+      "kanal": "KianAndJc",
+      "handle": "@KianAndJc",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1964
+    },
+    {
+      "kanal": "The Bite Shot",
+      "handle": "@TheBiteShot",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1964
+    },
+    {
+      "kanal": "Kenna",
+      "handle": "@KennaMarie",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1952
+    },
+    {
+      "kanal": "Irene Rudnyk",
+      "handle": "@IreneRudnyk",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1912
+    },
+    {
+      "kanal": "Jazza",
+      "handle": "@Jazza",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1888
+    },
+    {
+      "kanal": "THE WADS",
+      "handle": "@KimberlyWhisk",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1834
+    },
+    {
+      "kanal": "Eric Rosen",
+      "handle": "@eric-rosen",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1814
+    },
+    {
+      "kanal": "Irene Rudnyk",
+      "handle": "@IreneRudnyk",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1805
+    },
+    {
+      "kanal": "Dr Dray",
+      "handle": "@DrDrayzday",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1794
+    },
+    {
+      "kanal": "THE WADS",
+      "handle": "@KimberlyWhisk",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "cosine_similarity": 0.1733
+    },
+    {
+      "kanal": "Dr Dray",
+      "handle": "@DrDrayzday",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1674
+    },
+    {
+      "kanal": "Eric Rosen",
+      "handle": "@eric-rosen",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1606
+    },
+    {
+      "kanal": "Dong ASMR",
+      "handle": "@DongASMR",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1604
+    },
+    {
+      "kanal": "Doctor Mike",
+      "handle": "@DoctorMike",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "cosine_similarity": 0.1555
+    },
+    {
+      "kanal": "THE WADS",
+      "handle": "@KimberlyWhisk",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "cosine_similarity": 0.154
+    }
+  ]
+}

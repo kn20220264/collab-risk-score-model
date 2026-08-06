@@ -1,0 +1,535 @@
+{
+  "_opis": "Referentna distribucija neto sentimenta po kanalu, izvedena iz spoljasnjeg dataseta. Generisano skriptom scripts/calibrate_sentiment_reference.py - ne uredjivati rucno.",
+  "dataset": {
+    "naziv": "YouTube Comments Dataset with Sentiment, Toxicity and Spam Labels",
+    "izvor_url": "POPUNITI",
+    "autor": "POPUNITI",
+    "godina": "POPUNITI",
+    "licenca": "POPUNITI",
+    "metod_oznacavanja": "POPUNITI - ljudski anotatori ili automatski model?",
+    "napomena": "Ako su oznake generisane automatski, to je ogranicenje koje mora biti navedeno u radu (Korak 7, analiza nesigurnosti)."
+  },
+  "parametri_izvodjenja": {
+    "min_comments_per_channel": 50,
+    "z_score_threshold": 2.0,
+    "z_score_izvor": "Daranda et al. (2026), fajl: 14_2_01_Daranda.pdf, Tabela 2",
+    "ukupno_komentara": 45005,
+    "ukupno_kanala_u_datasetu": 66,
+    "kanala_u_referentnom_uzorku": 57
+  },
+  "distribucija": {
+    "mean": 31.3211,
+    "std": 17.4948,
+    "median": 30.3571,
+    "min": -7.0,
+    "max": 63.0952,
+    "p05": 5.5585,
+    "p25": 17.4352,
+    "p75": 45.2724,
+    "p95": 58.7469
+  },
+  "test_normalnosti": {
+    "test": "Shapiro-Wilk",
+    "statistic": 0.9689,
+    "p_value": 0.1484,
+    "normalnost_odbacena": false,
+    "skewness": 0.0153,
+    "interpretacija": "p >= 0.05 znaci da se hipoteza o normalnosti NE odbacuje, cime je upotreba Z-score pristupa parametarski opravdana."
+  },
+  "cap_threshold": -3.6684,
+  "analiza_osjetljivosti": [
+    {
+      "min_comments_per_channel": 1,
+      "n_channels": 66,
+      "mean": 35.2193,
+      "std": 22.0403,
+      "cap_threshold": -8.8613
+    },
+    {
+      "min_comments_per_channel": 30,
+      "n_channels": 58,
+      "mean": 31.6971,
+      "std": 17.5754,
+      "cap_threshold": -3.4537
+    },
+    {
+      "min_comments_per_channel": 50,
+      "n_channels": 57,
+      "mean": 31.3211,
+      "std": 17.4948,
+      "cap_threshold": -3.6684
+    },
+    {
+      "min_comments_per_channel": 100,
+      "n_channels": 41,
+      "mean": 26.0184,
+      "std": 16.0148,
+      "cap_threshold": -6.0112
+    },
+    {
+      "min_comments_per_channel": 200,
+      "n_channels": 29,
+      "mean": 27.4621,
+      "std": 15.6292,
+      "cap_threshold": -3.7963
+    }
+  ],
+  "kanali": [
+    {
+      "channel": "@TheCosmonautVarietyHour",
+      "n_comments": 100,
+      "positive_pct": 31.0,
+      "neutral_pct": 31.0,
+      "negative_pct": 38.0,
+      "net_sentiment": -7.0
+    },
+    {
+      "channel": "@indiatoday",
+      "n_comments": 1157,
+      "positive_pct": 30.34,
+      "neutral_pct": 38.12,
+      "negative_pct": 31.55,
+      "net_sentiment": -1.21
+    },
+    {
+      "channel": "@NDTV",
+      "n_comments": 1292,
+      "positive_pct": 29.26,
+      "neutral_pct": 45.28,
+      "negative_pct": 25.46,
+      "net_sentiment": 3.79
+    },
+    {
+      "channel": "@Nerdstalgic",
+      "n_comments": 100,
+      "positive_pct": 35.0,
+      "neutral_pct": 36.0,
+      "negative_pct": 29.0,
+      "net_sentiment": 6.0
+    },
+    {
+      "channel": "@Looper",
+      "n_comments": 147,
+      "positive_pct": 34.01,
+      "neutral_pct": 39.46,
+      "negative_pct": 26.53,
+      "net_sentiment": 7.48
+    },
+    {
+      "channel": "@AsianetNews",
+      "n_comments": 367,
+      "positive_pct": 28.88,
+      "neutral_pct": 52.59,
+      "negative_pct": 18.53,
+      "net_sentiment": 10.35
+    },
+    {
+      "channel": "@ABPAnanda",
+      "n_comments": 1287,
+      "positive_pct": 17.79,
+      "neutral_pct": 76.15,
+      "negative_pct": 6.06,
+      "net_sentiment": 11.73
+    },
+    {
+      "channel": "@IsaacArthurSFIA",
+      "n_comments": 100,
+      "positive_pct": 40.0,
+      "neutral_pct": 34.0,
+      "negative_pct": 26.0,
+      "net_sentiment": 14.0
+    },
+    {
+      "channel": "@ThanthiTV",
+      "n_comments": 709,
+      "positive_pct": 21.16,
+      "neutral_pct": 71.93,
+      "negative_pct": 6.91,
+      "net_sentiment": 14.25
+    },
+    {
+      "channel": "@TV9Telugu",
+      "n_comments": 256,
+      "positive_pct": 20.7,
+      "neutral_pct": 74.61,
+      "negative_pct": 4.69,
+      "net_sentiment": 16.02
+    },
+    {
+      "channel": "@BeyondScience",
+      "n_comments": 100,
+      "positive_pct": 32.0,
+      "neutral_pct": 53.0,
+      "negative_pct": 15.0,
+      "net_sentiment": 17.0
+    },
+    {
+      "channel": "@TheWhyFiles",
+      "n_comments": 100,
+      "positive_pct": 43.0,
+      "neutral_pct": 31.0,
+      "negative_pct": 26.0,
+      "net_sentiment": 17.0
+    },
+    {
+      "channel": "@A4",
+      "n_comments": 82,
+      "positive_pct": 21.95,
+      "neutral_pct": 73.17,
+      "negative_pct": 4.88,
+      "net_sentiment": 17.07
+    },
+    {
+      "channel": "@ravishkumar.official",
+      "n_comments": 1035,
+      "positive_pct": 26.47,
+      "neutral_pct": 64.44,
+      "negative_pct": 9.08,
+      "net_sentiment": 17.39
+    },
+    {
+      "channel": "@KannadaTech",
+      "n_comments": 2971,
+      "positive_pct": 26.49,
+      "neutral_pct": 64.46,
+      "negative_pct": 9.05,
+      "net_sentiment": 17.44
+    },
+    {
+      "channel": "@MadanGowri",
+      "n_comments": 100,
+      "positive_pct": 35.0,
+      "neutral_pct": 48.0,
+      "negative_pct": 17.0,
+      "net_sentiment": 18.0
+    },
+    {
+      "channel": "@News7Odisha",
+      "n_comments": 271,
+      "positive_pct": 22.14,
+      "neutral_pct": 73.8,
+      "negative_pct": 4.06,
+      "net_sentiment": 18.08
+    },
+    {
+      "channel": "@NTVTelugu",
+      "n_comments": 380,
+      "positive_pct": 26.32,
+      "neutral_pct": 65.53,
+      "negative_pct": 8.16,
+      "net_sentiment": 18.16
+    },
+    {
+      "channel": "@mohak_mangal",
+      "n_comments": 1065,
+      "positive_pct": 37.65,
+      "neutral_pct": 43.1,
+      "negative_pct": 19.25,
+      "net_sentiment": 18.4
+    },
+    {
+      "channel": "@NitishRajput",
+      "n_comments": 960,
+      "positive_pct": 35.0,
+      "neutral_pct": 50.42,
+      "negative_pct": 14.58,
+      "net_sentiment": 20.42
+    },
+    {
+      "channel": "@ManoramaNews",
+      "n_comments": 1162,
+      "positive_pct": 26.08,
+      "neutral_pct": 68.42,
+      "negative_pct": 5.51,
+      "net_sentiment": 20.57
+    },
+    {
+      "channel": "@JanamTV",
+      "n_comments": 1270,
+      "positive_pct": 24.65,
+      "neutral_pct": 71.5,
+      "negative_pct": 3.86,
+      "net_sentiment": 20.79
+    },
+    {
+      "channel": "@OdishaTV",
+      "n_comments": 1862,
+      "positive_pct": 29.43,
+      "neutral_pct": 64.34,
+      "negative_pct": 6.23,
+      "net_sentiment": 23.2
+    },
+    {
+      "channel": "@TheLallantop",
+      "n_comments": 1110,
+      "positive_pct": 33.78,
+      "neutral_pct": 56.67,
+      "negative_pct": 9.55,
+      "net_sentiment": 24.23
+    },
+    {
+      "channel": "@StokesTwins",
+      "n_comments": 82,
+      "positive_pct": 35.37,
+      "neutral_pct": 54.88,
+      "negative_pct": 9.76,
+      "net_sentiment": 25.61
+    },
+    {
+      "channel": "@abhiandniyu",
+      "n_comments": 2736,
+      "positive_pct": 39.91,
+      "neutral_pct": 47.19,
+      "negative_pct": 12.9,
+      "net_sentiment": 27.01
+    },
+    {
+      "channel": "@WWE",
+      "n_comments": 122,
+      "positive_pct": 41.8,
+      "neutral_pct": 43.44,
+      "negative_pct": 14.75,
+      "net_sentiment": 27.05
+    },
+    {
+      "channel": "@dhruvrathee",
+      "n_comments": 1155,
+      "positive_pct": 40.09,
+      "neutral_pct": 49.09,
+      "negative_pct": 10.82,
+      "net_sentiment": 29.26
+    },
+    {
+      "channel": "@TechnicalGuruji",
+      "n_comments": 2744,
+      "positive_pct": 39.69,
+      "neutral_pct": 50.98,
+      "negative_pct": 9.33,
+      "net_sentiment": 30.36
+    },
+    {
+      "channel": "@MrBeast",
+      "n_comments": 84,
+      "positive_pct": 34.52,
+      "neutral_pct": 61.9,
+      "negative_pct": 3.57,
+      "net_sentiment": 30.95
+    },
+    {
+      "channel": "@StudyIQEducationLtd",
+      "n_comments": 1193,
+      "positive_pct": 42.92,
+      "neutral_pct": 46.94,
+      "negative_pct": 10.14,
+      "net_sentiment": 32.77
+    },
+    {
+      "channel": "@SonyMarathi",
+      "n_comments": 1587,
+      "positive_pct": 38.06,
+      "neutral_pct": 57.34,
+      "negative_pct": 4.6,
+      "net_sentiment": 33.46
+    },
+    {
+      "channel": "@SangeetMarathi",
+      "n_comments": 53,
+      "positive_pct": 43.4,
+      "neutral_pct": 49.06,
+      "negative_pct": 7.55,
+      "net_sentiment": 35.85
+    },
+    {
+      "channel": "@SonySAB",
+      "n_comments": 79,
+      "positive_pct": 45.57,
+      "neutral_pct": 45.57,
+      "negative_pct": 8.86,
+      "net_sentiment": 36.71
+    },
+    {
+      "channel": "@HYBELABELS",
+      "n_comments": 83,
+      "positive_pct": 44.58,
+      "neutral_pct": 48.19,
+      "negative_pct": 7.23,
+      "net_sentiment": 37.35
+    },
+    {
+      "channel": "@SansadTV",
+      "n_comments": 1033,
+      "positive_pct": 43.37,
+      "neutral_pct": 52.08,
+      "negative_pct": 4.55,
+      "net_sentiment": 38.82
+    },
+    {
+      "channel": "@5MinuteCrafts",
+      "n_comments": 120,
+      "positive_pct": 44.17,
+      "neutral_pct": 50.83,
+      "negative_pct": 5.0,
+      "net_sentiment": 39.17
+    },
+    {
+      "channel": "@PewDiePie",
+      "n_comments": 83,
+      "positive_pct": 49.4,
+      "neutral_pct": 40.96,
+      "negative_pct": 9.64,
+      "net_sentiment": 39.76
+    },
+    {
+      "channel": "@Goldmines",
+      "n_comments": 124,
+      "positive_pct": 49.19,
+      "neutral_pct": 43.55,
+      "negative_pct": 7.26,
+      "net_sentiment": 41.94
+    },
+    {
+      "channel": "@Maiboli",
+      "n_comments": 107,
+      "positive_pct": 46.73,
+      "neutral_pct": 48.6,
+      "negative_pct": 4.67,
+      "net_sentiment": 42.06
+    },
+    {
+      "channel": "@ColorsTV",
+      "n_comments": 99,
+      "positive_pct": 55.56,
+      "neutral_pct": 33.33,
+      "negative_pct": 11.11,
+      "net_sentiment": 44.44
+    },
+    {
+      "channel": "@OdiaTech",
+      "n_comments": 2956,
+      "positive_pct": 48.88,
+      "neutral_pct": 47.23,
+      "negative_pct": 3.89,
+      "net_sentiment": 44.99
+    },
+    {
+      "channel": "@BBKiVines",
+      "n_comments": 1946,
+      "positive_pct": 50.46,
+      "neutral_pct": 44.35,
+      "negative_pct": 5.19,
+      "net_sentiment": 45.27
+    },
+    {
+      "channel": "@TwentyFourNews",
+      "n_comments": 262,
+      "positive_pct": 49.62,
+      "neutral_pct": 47.33,
+      "negative_pct": 3.05,
+      "net_sentiment": 46.56
+    },
+    {
+      "channel": "@VillageCookingChannel",
+      "n_comments": 2780,
+      "positive_pct": 51.8,
+      "neutral_pct": 44.03,
+      "negative_pct": 4.17,
+      "net_sentiment": 47.63
+    },
+    {
+      "channel": "@SETIndia",
+      "n_comments": 107,
+      "positive_pct": 57.01,
+      "neutral_pct": 33.64,
+      "negative_pct": 9.35,
+      "net_sentiment": 47.66
+    },
+    {
+      "channel": "@김프로KIMPRO",
+      "n_comments": 92,
+      "positive_pct": 54.35,
+      "neutral_pct": 41.3,
+      "negative_pct": 4.35,
+      "net_sentiment": 50.0
+    },
+    {
+      "channel": "@TSeries",
+      "n_comments": 88,
+      "positive_pct": 56.82,
+      "neutral_pct": 36.36,
+      "negative_pct": 6.82,
+      "net_sentiment": 50.0
+    },
+    {
+      "channel": "@chandanshetty",
+      "n_comments": 312,
+      "positive_pct": 56.73,
+      "neutral_pct": 40.38,
+      "negative_pct": 2.88,
+      "net_sentiment": 53.85
+    },
+    {
+      "channel": "@BengaliFairyTales",
+      "n_comments": 3147,
+      "positive_pct": 56.43,
+      "neutral_pct": 41.28,
+      "negative_pct": 2.29,
+      "net_sentiment": 54.15
+    },
+    {
+      "channel": "@AkaShivani",
+      "n_comments": 79,
+      "positive_pct": 56.96,
+      "neutral_pct": 41.77,
+      "negative_pct": 1.27,
+      "net_sentiment": 55.7
+    },
+    {
+      "channel": "@BANGTANTV",
+      "n_comments": 86,
+      "positive_pct": 61.63,
+      "neutral_pct": 32.56,
+      "negative_pct": 5.81,
+      "net_sentiment": 55.81
+    },
+    {
+      "channel": "@ZeeMusicCompany",
+      "n_comments": 90,
+      "positive_pct": 62.22,
+      "neutral_pct": 32.22,
+      "negative_pct": 5.56,
+      "net_sentiment": 56.67
+    },
+    {
+      "channel": "@BhavinBhanushali",
+      "n_comments": 3256,
+      "positive_pct": 61.76,
+      "neutral_pct": 35.14,
+      "negative_pct": 3.1,
+      "net_sentiment": 58.66
+    },
+    {
+      "channel": "@ZeeTV",
+      "n_comments": 88,
+      "positive_pct": 68.18,
+      "neutral_pct": 22.73,
+      "negative_pct": 9.09,
+      "net_sentiment": 59.09
+    },
+    {
+      "channel": "@BLACKPINK",
+      "n_comments": 91,
+      "positive_pct": 64.84,
+      "neutral_pct": 30.77,
+      "negative_pct": 4.4,
+      "net_sentiment": 60.44
+    },
+    {
+      "channel": "@AlansUniverse",
+      "n_comments": 84,
+      "positive_pct": 65.48,
+      "neutral_pct": 32.14,
+      "negative_pct": 2.38,
+      "net_sentiment": 63.1
+    }
+  ]
+}

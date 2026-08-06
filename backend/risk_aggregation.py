@@ -1,42 +1,10 @@
-"""
-Modul agregacije risk skora.
+"""Agregacija risk skora iz kvantitativnog, authenticity, sentiment i brand-fit modula."""
 
-Metodoloske izmjene u odnosu na prethodnu verziju:
-1. Tezine w1-w4 se vise NE hardkoduju direktno ovdje - uvoze se iz
-   roc_service.py (Rank Order Centroid - Sidanski princip AHP ankete
-   nije bio izvodljiv zbog nedostatka pristupa vecem broju eksperata,
-   pa je ROC metod usvojen kao pojednostavljena, ali i dalje akademski
-   utemeljena alternativa - zahtijeva samo rangiranje kriterijuma, ne
-   puna parna poredjenja) ili, za bulk analizu vise kreatora, iz
-   entropy_service.py (Hwang & Yoon, 1981).
-2. Risk cap mehanizam je formalizovan kao IF-THEN mapiranje
-   (frekvencija/ozbiljnost -> kategorija rizika), po uzoru na
-   Markowski & Mannan (2008), citirano u Duijm (2015, Safety Science),
-   umjesto proizvoljnih pragova bez obrazlozenja. Struktura pravila
-   (non-compensatory/conjunctive) je akademski utemeljena - vidi
-   ssrn5468566.pdf (Einhorn, 1970 - conjunctive model) i
-   Banihabib et al. (2020) za poredjenje compensatory/
-   non-compensatory MCDM pristupa.
-3. Kombinacija ponderisanog zbira (compensatory) i risk cap-a
-   (non-compensatory) je namjerna hibridna metodologija, ne
-   improvizacija - vidi iste izvore.
-4. Engagement benchmark (_engagement_benchmark_for_size) koristi
-   DVOSLOJNI pristup - vidi detaljnu napomenu iznad funkcije. Za
-   velike kanale koristi stvarne CHANNEL-LEVEL podatke (Lopez-
-   Navarrete Tabela 1), za manje kanale transparentno obiljezen
-   industrijski fallback.
-5. Subscriber-to-view ratio risk cap koristi Z-SCORE pristup umjesto
-   fiksnog praga, po uzoru na Daranda et al. (2025) - vidi napomenu
-   iznad _calculate_ratio_z_score.
-6. Kategorije rizika (nizak/srednji/visok) koriste PERCENTIL-BAZIRANE
-   granice izvedene iz referentnog uzorka testiranih kanala, umjesto
-   pretpostavljenih vrijednosti - po uzoru na Daranda et al. (2025),
-   koji definisu "severity" kategorije kao procentile iz sopstvene
-   distribucije podataka. Vidi napomenu iznad
-   get_risk_category_thresholds.
-"""
-
+import json
+import os
 import statistics
+
+import numpy as np
 
 from .roc_service import get_module_weights
 from .entropy_service import compute_entropy_weights, build_decision_matrix
@@ -44,75 +12,172 @@ from .entropy_service import compute_entropy_weights, build_decision_matrix
 MODULE_LABELS = ["quantitative", "authenticity", "sentiment", "brand_fit"]
 
 
-# ---------------------------------------------------------------------
-# Z-SCORE PRISTUP za subscriber-to-view ratio anomaliju - zamjenjuje
-# raniji fiksni prag (>50) statisticki utemeljenim pragom, po uzoru na
-# Daranda et al. (2025), koji koriste identican Z-score prag (2.0) za
-# detekciju anomalija, sa obrazlozenjem "95% interval povjerenja; 11%
-# stopa laznih pozitivnih".
-#
-# Formula: z = (x - mu) / sigma (standardna statisticka mjera koliko
-# je vrijednost x udaljena od srednje vrijednosti referentnog uzorka,
-# izrazeno u jedinicama standardne devijacije).
-#
-# VAZNO: _REFERENCE_RATIOS MORA biti popunjen stvarnim
-# subscriber_to_view_ratio vrijednostima iz testiranih kanala prije
-# nego sto ovaj mehanizam moze pouzdano da se koristi - vidi poglavlje
-# 4.3 za spisak testiranih kanala i njihovih vrijednosti. Mali uzorak
-# (n<30) znaci da je ovo PRIVREMENA procjena - navedeno kao
-# ogranicenje. Dok je uzorak prazan/nedovoljan, cap se jednostavno ne
-# aktivira (vraca z-score 0.0), sto je bezbjedan fallback.
-# ---------------------------------------------------------------------
-
-_REFERENCE_RATIOS = [
-    # POPUNITI stvarnim subscriber_to_view_ratio vrijednostima iz
-    # testiranih kanala, npr:
-    # 0.98,   # MasterChef Srbija
-    # 5.23,   # NikkieTutorials
-    # ...
+# Stratifikacija referentne distribucije po velicini kanala (subscriber tier),
+# da se kanal poredi samo sa slicnim po velicini.
+_SUBSCRIBER_TIERS = [
+    (0, 250_000, "nano/mikro (<250K)"),
+    (250_000, 1_000_000, "mikro/srednji (250K-1M)"),
+    (1_000_000, 5_000_000, "makro (1M-5M)"),
+    (5_000_000, 15_000_000, "vrlo veliki (5M-15M)"),
+    (15_000_000, float("inf"), "velikan/mega-kanal (15M+)"),
 ]
 
-_Z_SCORE_THRESHOLD = 2.0  # Daranda et al. (2025) - 95% interval povjerenja
+_REFERENCE_DATA_PATH = os.path.join(os.path.dirname(__file__), "reference_ratios.json")
 
 
-def _calculate_ratio_z_score(ratio: float) -> float:
-    """
-    Z-score za subscriber_to_view_ratio u odnosu na referentnu
-    distribuciju testiranih kanala.
-    """
-    if len(_REFERENCE_RATIOS) < 2:
-        return 0.0  # nedovoljno referentnih podataka - cap se ne aktivira
-    mean_ratio = statistics.mean(_REFERENCE_RATIOS)
-    std_ratio = statistics.stdev(_REFERENCE_RATIOS)
+def _load_reference_data() -> list:
+    if os.path.exists(_REFERENCE_DATA_PATH):
+        with open(_REFERENCE_DATA_PATH, "r") as f:
+            return json.load(f)
+    return []
+
+
+_REFERENCE_DATA = _load_reference_data()
+
+
+def _get_tier_label(subscriber_count: int) -> str:
+    for lo, hi, label in _SUBSCRIBER_TIERS:
+        if lo <= subscriber_count < hi:
+            return label
+    return _SUBSCRIBER_TIERS[-1][2]
+
+
+_TIER_RATIOS_CACHE = {
+    (lo, hi): np.array(sorted([d["ratio"] for d in _REFERENCE_DATA if lo <= d["subs"] < hi]))
+    for lo, hi, _ in _SUBSCRIBER_TIERS
+}
+
+_FALLBACK_TIER_LO = _SUBSCRIBER_TIERS[-1][0]
+
+
+def _get_tier_ratios_cached(subscriber_count: int) -> np.ndarray:
+    if subscriber_count is None:
+        subscriber_count = _FALLBACK_TIER_LO
+
+    for lo, hi, _ in _SUBSCRIBER_TIERS:
+        if lo <= subscriber_count < hi:
+            return _TIER_RATIOS_CACHE[(lo, hi)]
+
+    last_lo, last_hi, _ = _SUBSCRIBER_TIERS[-1]
+    return _TIER_RATIOS_CACHE[(last_lo, last_hi)]
+
+
+_Z_SCORE_THRESHOLD = 2.0
+
+
+def _calculate_ratio_z_score(ratio: float, subscriber_count: int) -> float:
+    tier_ratios = _get_tier_ratios_cached(subscriber_count)
+    if len(tier_ratios) < 2:
+        return 0.0
+    mean_ratio = float(np.mean(tier_ratios))
+    std_ratio = float(np.std(tier_ratios, ddof=1))
     if std_ratio == 0:
         return 0.0
     return (ratio - mean_ratio) / std_ratio
 
 
-# Risk cap pravila kao formalno IF-THEN mapiranje:
-# "AKO je metrika M u kategoriji kriticnog nalaza, ONDA je finalni
-# skor ogranicen na najvise 'cap' vrijednost", nezavisno od
-# ponderisanog zbira ostalih modula (conjunctive/non-compensatory
-# logika, Einhorn 1970).
+def _percentile_score(ratio: float, reference_sorted: np.ndarray) -> float:
+    """Percentil-baziran skor (InCites metod): % referentnih kanala sa gorim ratio-om."""
+    n = len(reference_sorted)
+    if n < 2:
+        return 50.0
+
+    if ratio <= reference_sorted[0]:
+        pr_lo, pr_hi = 0.0, 100.0 / n
+        cc_lo, cc_hi = reference_sorted[0], reference_sorted[1]
+    elif ratio >= reference_sorted[-1]:
+        pr_lo, pr_hi = 100.0 * (n - 2) / n, 100.0 * (n - 1) / n
+        cc_lo, cc_hi = reference_sorted[-2], reference_sorted[-1]
+    else:
+        idx = int(np.searchsorted(reference_sorted, ratio))
+        cc_lo, cc_hi = reference_sorted[idx - 1], reference_sorted[idx]
+        pr_lo, pr_hi = 100.0 * (idx - 1) / n, 100.0 * idx / n
+
+    if cc_hi == cc_lo:
+        percentile = pr_lo
+    else:
+        percentile = pr_lo + (ratio - cc_lo) * (pr_hi - pr_lo) / (cc_hi - cc_lo)
+
+    return max(0.0, min(100.0, percentile))
+
+
+_SENTIMENT_REFERENCE_PATH = os.path.join(
+    os.path.dirname(__file__), "reference_sentiment.json"
+)
+
+
+def _load_sentiment_reference() -> dict:
+    """Generise scripts/calibrate_sentiment_reference.py. Prazan dict = cap se ne aktivira."""
+    if not os.path.exists(_SENTIMENT_REFERENCE_PATH):
+        return {}
+    try:
+        with open(_SENTIMENT_REFERENCE_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+_SENTIMENT_REFERENCE = _load_sentiment_reference()
+
+_SENTIMENT_Z_THRESHOLD = -2.0
+
+
+def get_sentiment_reference_stats() -> dict:
+    dist = _SENTIMENT_REFERENCE.get("distribucija", {})
+    params = _SENTIMENT_REFERENCE.get("parametri_izvodjenja", {})
+    normality = _SENTIMENT_REFERENCE.get("test_normalnosti", {})
+
+    mean = dist.get("mean")
+    std = dist.get("std")
+    available = mean is not None and std is not None and std > 0
+
+    return {
+        "available": available,
+        "mean": mean,
+        "std": std,
+        "median": dist.get("median"),
+        "n_channels": params.get("kanala_u_referentnom_uzorku"),
+        "n_comments": params.get("ukupno_komentara"),
+        "min_comments_per_channel": params.get("min_comments_per_channel"),
+        "cap_threshold": _SENTIMENT_REFERENCE.get("cap_threshold"),
+        "z_score_threshold": _SENTIMENT_Z_THRESHOLD,
+        "normality_test": normality.get("test"),
+        "normality_p_value": normality.get("p_value"),
+        "normality_rejected": normality.get("normalnost_odbacena"),
+        "skewness": normality.get("skewness"),
+        "dataset": _SENTIMENT_REFERENCE.get("dataset", {}),
+        "sensitivity_analysis": _SENTIMENT_REFERENCE.get("analiza_osjetljivosti", []),
+    }
+
+
+def _calculate_sentiment_z_score(sentiment_score: float) -> float:
+    ref = get_sentiment_reference_stats()
+    if not ref["available"]:
+        return 0.0
+    return (sentiment_score - ref["mean"]) / ref["std"]
+
+
+def _is_sentiment_anomalous(sentiment_score: float) -> bool:
+    if not get_sentiment_reference_stats()["available"]:
+        return False
+    return _calculate_sentiment_z_score(sentiment_score) < _SENTIMENT_Z_THRESHOLD
+
+
+# Risk cap pravila: IF-THEN mapiranje, non-compensatory u odnosu na ponderisani zbir.
+# metrics dict mora sadrzati "subscriber_count" (za stratifikovan Z-score).
 RISK_CAP_RULES = [
     {
-        "name": "Izrazito negativan sentiment",
-        "condition": lambda m: m["sentiment_score"] < -30,
+        "name": "Statisticki anomalan negativan sentiment (Z-score < -2.0)",
+        "condition": lambda m: _is_sentiment_anomalous(m["sentiment_score"]),
         "cap": 40,
     },
     {
-        "name": "Statisticki anomalan odnos pretplatnici/pregledi (Z-score > 2.0)",
-        "condition": lambda m: _calculate_ratio_z_score(m["subscriber_to_view_ratio"]) > _Z_SCORE_THRESHOLD,
+        "name": "Statisticki anomalan odnos pretplatnici/pregledi (Z-score > 2.0, u odnosu na kanale slicne velicine)",
+        "condition": lambda m: _calculate_ratio_z_score(
+            m["subscriber_to_view_ratio"], m["subscriber_count"]
+        ) > _Z_SCORE_THRESHOLD,
         "cap": 35,
     },
-    # GRADUISAN brand-fit cap (dva praga) - struktura sa vise
-    # stepenovanih kategorija ozbiljnosti je usaglasena sa formalnom
-    # risk-matrix metodologijom (Markowski & Mannan, 2008, citirano u
-    # Duijm, 2015, Safety Science). Pragovi < 10 i < 25 potvrdjeni
-    # testom na NikkieTutorials + Caterpillar primjeru (brand_fit_score
-    # = 13.77 i 4.04 u ponovljenim testovima), MasterChef Srbija +
-    # Plazma (brand_fit_score = 49.39, legitiman umjeren fit) ostaje
-    # sigurno iznad oba praga.
     {
         "name": "Ekstremno slabo brand-fit poklapanje",
         "condition": lambda m: m["brand_fit_score"] < 10,
@@ -126,70 +191,109 @@ RISK_CAP_RULES = [
 ]
 
 
-# ---------------------------------------------------------------------
-# Engagement benchmark - DVOSLOJNI pristup, jer nijedan pojedinacan
-# izvor ne pokriva ceo opseg velicina kanala pouzdano:
-#
-# SLOJ 1 (>= 15 miliona pretplatnika): power-law kriva fitovana na
-# STVARNE CHANNEL-LEVEL podatke (Lopez-Navarrete et al., 2021, Tabela
-# 1: ElRubiusOMG 35.9M/7.815%, Vegetta777 27.5M/8.603%, AuronPlay
-# 18.4M/9.750%). Ovo je pravi nivo agregacije za nasu svrhu (subs ->
-# prosjecan ER kanala), ali samo n=3 tacke, sve u opsegu 18-36M -
-# koristi se samo unutar/blizu tog opsega (klemovano).
-#   ER = 2415.774517 * subs^-0.329418
-#   (regresija: log(ER) = log(a) + b*log(subs), numpy.polyfit)
-#
-# SLOJ 2 (< 15 miliona pretplatnika): NEMAMO pouzdan akademski
-# channel-level izvor za ovaj segment. Umjesto lazne preciznosti,
-# koristi se eksplicitno OBILJEZEN, konzervativan industrijski prag:
-# sredina "dobrog" opsega (3-7%) po opste prihvacenoj industrijskoj
-# klasifikaciji (YouTube Engagement Rate Calculator FAQ, komercijalni
-# izvor - NIJE peer-reviewed, tretirati kao privremeni oslonac dok se
-# ne nadje/sprovede pravi channel-level akademski izvor za ovaj
-# segment velicina - vidi poglavlje 4.3, planirano dalje istrazivanje).
-# ---------------------------------------------------------------------
-
 _LARGE_CHANNEL_CURVE_A = 2415.774517
 _LARGE_CHANNEL_CURVE_B = -0.329418
 _LARGE_CHANNEL_THRESHOLD = 15_000_000
-_LARGE_CHANNEL_MIN_SUBS = 18_400_000   # donja granica stvarno mjerenog opsega (Tabela 1)
-_LARGE_CHANNEL_MAX_SUBS = 35_900_000   # gornja granica stvarno mjerenog opsega (Tabela 1)
+_LARGE_CHANNEL_MIN_SUBS = 18_400_000
+_LARGE_CHANNEL_MAX_SUBS = 35_900_000
 
-_SMALL_CHANNEL_FALLBACK_ER = 5.0  # sredina "dobrog" opsega 3-7%, industrijski izvor, NIJE akademski potvrdjeno
+_MEGA_CHANNEL_THRESHOLD = 100_000_000
+_MEGA_CHANNEL_MIN_BENCHMARK = 1.0
+
+# Referentne vrijednosti intenziteta interakcije po tematskoj kategoriji.
+# Izvor: Rieder, Coromina i Matamoros-Fernandez (2020), Tabela 10.
+_TABLE10_INTENSITY = {
+    "Gaming": 4.7,
+    "Lifestyle": 3.9,
+    "Society": 3.8,
+    "Knowledge": 3.7,
+    "Entertainment": 3.5,
+    "Sports": 3.2,
+    "Music": 2.9,
+    "none": 3.1,
+}
+
+_CALIBRATION_BASELINE_CATEGORY = "Gaming"
+
+# Mapiranje creator_persona.primary_niche na kategorije iz Tabele 10.
+_NICHE_TO_TABLE10_CATEGORY = {
+    "tech": "Knowledge",
+    "consumer electronics": "Knowledge",
+    "education": "Knowledge",
+    "science": "Knowledge",
+    "finance": "Knowledge",
+    "gaming": "Gaming",
+    "comedy": "Entertainment",
+    "entertainment": "Entertainment",
+    "music": "Music",
+    "sports": "Sports",
+    "fitness": "Sports",
+    "news": "Society",
+    "politics": "Society",
+    "lifestyle": "Lifestyle",
+    "beauty": "Lifestyle",
+    "fashion": "Lifestyle",
+    "food": "Lifestyle",
+    "travel": "Lifestyle",
+}
 
 
-def _engagement_benchmark_for_size(subscriber_count: int) -> float:
+def _map_niche_to_table10_category(primary_niche: str) -> str:
+    if not primary_niche:
+        return "none"
+    return _NICHE_TO_TABLE10_CATEGORY.get(primary_niche.strip().lower(), "none")
+
+
+_TABLE10_NEUTRAL_INTENSITY = round(
+    sum(_TABLE10_INTENSITY.values()) / len(_TABLE10_INTENSITY), 3
+)
+
+
+def _genre_adjustment_factor(primary_niche: str) -> float:
+    """Mnozilac za engagement benchmark u odnosu na Gaming kao baznu kategoriju."""
+    category = _map_niche_to_table10_category(primary_niche)
+    baseline = _TABLE10_INTENSITY[_CALIBRATION_BASELINE_CATEGORY]
+    return _TABLE10_INTENSITY.get(category, baseline) / baseline
+
+
+def _absolute_genre_benchmark(primary_niche: str) -> float:
+    """Apsolutna ocekivana vrijednost engagement-a (%) za zanr, iz Tabele 10."""
+    if not primary_niche:
+        return _TABLE10_NEUTRAL_INTENSITY
+    category = _map_niche_to_table10_category(primary_niche)
+    if category == "none":
+        return _TABLE10_NEUTRAL_INTENSITY
+    return _TABLE10_INTENSITY[category]
+
+
+_DEFAULT_INTENSITY = 3.6
+_TIER2_ANCHOR = 15_000_000
+_TIER2_CEILING = 35_900_000
+_TIER2_DECAY_EXPONENT = -0.329
+
+
+def _engagement_benchmark_for_size(subscriber_count: int, primary_niche: str = None) -> float:
+    """Ocekivani engagement rate prilagodjen velicini kanala i zanru.
+
+    Ispod 15M: konstanta po kategoriji (Rieder et al.). Od 15M navise: ista
+    vrijednost umanjena po zakonu stepena, bez skoka na granici.
     """
-    Vraca ocekivan "odlican" engagement rate (%) za dati broj
-    pretplatnika.
+    base = _TABLE10_INTENSITY.get(primary_niche, _DEFAULT_INTENSITY)
 
-    Za velike kanale (>= 15M), koristi krivu fitovanu na stvarne
-    channel-level podatke (n=3, Lopez-Navarrete Tabela 1) - kriva se
-    dodatno klemuje na stvarno mjeren opseg (18.4M-35.9M) da se
-    izbjegne neopravdana ekstrapolacija van njega.
+    if subscriber_count is None or subscriber_count < _TIER2_ANCHOR:
+        return round(base, 3)
 
-    Za manje kanale (< 15M), gdje nemamo pouzdan akademski channel-
-    level izvor, koristi se transparentno obiljezen industrijski
-    fallback (5%, sredina "dobrog" opsega 3-7%) - NIJE akademski
-    potvrdjeno, treba tretirati kao privremeno rjesenje.
-    """
-    if subscriber_count >= _LARGE_CHANNEL_THRESHOLD:
-        clamped = max(_LARGE_CHANNEL_MIN_SUBS, min(subscriber_count, _LARGE_CHANNEL_MAX_SUBS))
-        return round(_LARGE_CHANNEL_CURVE_A * (clamped ** _LARGE_CHANNEL_CURVE_B), 3)
-    else:
-        return _SMALL_CHANNEL_FALLBACK_ER
+    effective = min(subscriber_count, _TIER2_CEILING)
+    decay = (effective / _TIER2_ANCHOR) ** _TIER2_DECAY_EXPONENT
+
+    return round(base * decay, 3)
 
 
-def normalize_quantitative_score(quant_metrics: dict, subscriber_count: int = None) -> float:
-    """
-    Pretvara sirove kvantitativne metrike u jedinstven skor 0-100.
-
-    Engagement komponenta se poredi sa dvoslojnim benchmarkom (vidi
-    _engagement_benchmark_for_size) umjesto univerzalnog fiksnog
-    praga ili proizvoljnih stepenastih kategorija.
-    """
+def normalize_quantitative_score(
+    quant_metrics: dict, subscriber_count: int = None, primary_niche: str = None
+) -> float:
     if subscriber_count is not None:
-        benchmark = _engagement_benchmark_for_size(subscriber_count)
+        benchmark = _engagement_benchmark_for_size(subscriber_count, primary_niche)
     else:
         benchmark = 10.0  # fallback za kompatibilnost unazad
 
@@ -199,49 +303,29 @@ def normalize_quantitative_score(quant_metrics: dict, subscriber_count: int = No
     return round((engagement + view_stability) / 2, 2)
 
 
-def normalize_authenticity_score(quant_metrics: dict) -> float:
-    """
-    Manji subscriber/view ratio = bolja autenticnost.
-
-    METODOLOSKO OGRANICENJE (transparentno, ne skriveno): mnozilac 3
-    je HEURISTIKA, uskladjena sa istom logikom u
-    main.py::_compute_audience_health (koja koristi isti odnos za
-    "bot activity" prikaz). Ovaj konkretan broj NIJE empirijski izveden.
-
-    Pravi akademski pristup za ovu vrstu proracuna - vidi Developing a
-    Multimodal Approach to Channel Characterization on YouTube - ne
-    pretpostavlja mnozilac, nego racuna Cohen's d effect size (Cohen,
-    1988) za svaku relacionu metriku (ukljucujuci views-to-subscriber)
-    na osnovu STVARNOG label-ovanog dataseta aktivnih i potvrdjeno
-    suspendovanih kanala (u njihovom slucaju: 71 kanal, 7 suspendovanih),
-    i koristi taj Cohen's d kao tezinu u ponderisanom zbiru
-    (S = sum(d_i * x_i)). Takav pristup zahtijeva prikupljanje
-    sopstvenog label-ovanog dataseta poznato-problematicnih kanala kroz
-    vrijeme, sto nadilazi obim ovog rada. Trenutni mnozilac (3) treba
-    tretirati kao pocetnu, nepotvrdjenu procjenu - eksplicitno navedeno
-    kao ogranicenje i pravac buduceg istrazivanja u poglavlju 5.
-    """
+def normalize_authenticity_score(quant_metrics: dict, subscriber_count: int = None) -> float:
+    """Percentil-baziran skor autenticnosti, stratifikovan po velicini kanala."""
     ratio = quant_metrics["subscriber_to_view_ratio"]
-    score = max(0, 100 - ratio * 3)
-    return round(min(score, 100), 2)
+
+    if subscriber_count is None:
+        subscriber_count = _FALLBACK_TIER_LO
+
+    tier_ratios = _get_tier_ratios_cached(subscriber_count)
+    percentile = _percentile_score(ratio, tier_ratios)
+
+    # Jednosmjerno: ratio na/ispod medijane = pun skor, nizak ratio nije rizik.
+    if percentile <= 50:
+        return 100.0
+    return round(100 - (percentile - 50) * 2, 2)
 
 
 def normalize_sentiment_score(sentiment_result: dict) -> float:
-    """
-    Sentiment score je vec u opsegu -100 do 100, pretvaramo u 0-100.
-    """
     raw = sentiment_result["sentiment_score"]
     return round((raw + 100) / 2, 2)
 
 
 def apply_risk_caps(final_score: float, metrics: dict) -> dict:
-    """
-    Provjerava sva IF-THEN risk cap pravila. Ako se neko aktivira,
-    finalni skor se ogranicava na min(trenutni_cap, novi_cap) - dakle
-    najstroziji aktivirani cap odredjuje gornju granicu (conjunctive
-    logika: jedan kriticni nalaz je dovoljan da obori skor, bez obzira
-    na ostale module).
-    """
+    """Najstroziji aktivirani cap odredjuje gornju granicu finalnog skora."""
     triggered = []
     capped_score = final_score
 
@@ -257,55 +341,70 @@ def apply_risk_caps(final_score: float, metrics: dict) -> dict:
     }
 
 
-# ---------------------------------------------------------------------
-# PERCENTIL-BAZIRANE GRANICE za kategorije rizika - zamjenjuju ranije
-# pretpostavljene granice (70/45) empirijski izvedenim vrijednostima
-# iz sopstvenog testiranog uzorka, po uzoru na Daranda et al. (2025),
-# koji definisu "severity" kategorije kao procentile iz sopstvene
-# distribucije podataka (npr. "High = gornjih 5%").
-#
-# Ovdje se koristi tercil-podjela (donja/gornja granica na 33./67.
-# percentilu) umjesto Daranda-inog asimetricnog razbijanja (5%/15%/
-# 80%), jer je njihov pristup dizajniran za RIJETKE anomalije, dok
-# ovaj model treba da podijeli CIJEL uzorak na tri priblizno jednaka
-# dijela (nizak/srednji/visok rizik) - metodoloska adaptacija istog
-# principa (percentil-bazirano umjesto pretpostavljeno), ne identicna
-# replikacija.
-#
-# VAZNO: _REFERENCE_FINAL_SCORES MORA biti popunjen stvarnim finalnim
-# skorovima testiranih kanala (POD TRENUTNOM verzijom koda - ROC
-# tezine + nova brand-fit kalibracija) prije upotrebe. Dok uzorak nije
-# dovoljan (n<5), koristi se fallback na ranije pretpostavljene
-# vrijednosti (70/45).
-# ---------------------------------------------------------------------
+def build_sentiment_diagnostics(sentiment_result: dict) -> dict:
+    ref = get_sentiment_reference_stats()
+    raw = sentiment_result["sentiment_score"]
 
-_REFERENCE_FINAL_SCORES = [
-    52.21,  # MKBHD + NYX Professional Makeup
-    75.85,  # MKBHD + Apple
-    62.44,  # Simon Wilson + Skyscanner
-    83.98,  # AN NA + Booking.com
-    60.57,  # NikkieTutorials + Prada
-]
+    return {
+        "raw_net_sentiment": raw,
+        "positive_pct": sentiment_result.get("positive_pct"),
+        "neutral_pct": sentiment_result.get("neutral_pct"),
+        "negative_pct": sentiment_result.get("negative_pct"),
+        "z_score": round(_calculate_sentiment_z_score(raw), 3),
+        "reference_mean": ref["mean"],
+        "reference_std": ref["std"],
+        "reference_n_channels": ref["n_channels"],
+        "cap_threshold": ref["cap_threshold"],
+        "threshold_basis": (
+            "z_score_external_reference" if ref["available"] else "unavailable_cap_disabled"
+        ),
+    }
+
+
+_THRESHOLDS_PATH = os.path.join(
+    os.path.dirname(__file__), "reference_risk_thresholds.json"
+)
+
+# Rezerva ako kalibracioni fajl nedostaje - nije za produkcijsku upotrebu.
+_FALLBACK_THRESHOLDS = {"low_threshold": 83.48, "high_threshold": 58.97}
+
+_thresholds_cache = None
+
+
+def _load_risk_thresholds() -> dict:
+    global _thresholds_cache
+    if _thresholds_cache is not None:
+        return _thresholds_cache
+
+    try:
+        with open(_THRESHOLDS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        granice = data["granice"]
+        stvarni = data["stvarni_parovi"]
+        ukrsteni = data["ukrsteni_parovi"]
+
+        _thresholds_cache = {
+            "low_threshold": granice["low_threshold"],
+            "high_threshold": granice["high_threshold"],
+            "source": (
+                f"empirijski, kontrolna grupa "
+                f"(n={stvarni['n']} stvarnih / {ukrsteni['n']} ukrstenih)"
+            ),
+            "n_stvarnih": stvarni["n"],
+            "n_ukrstenih": ukrsteni["n"],
+            "cliffs_delta": data.get("validacija", {}).get("cliffs_delta"),
+        }
+    except (FileNotFoundError, KeyError, json.JSONDecodeError):
+        _thresholds_cache = {
+            **_FALLBACK_THRESHOLDS,
+            "source": "rezerva n=5 (kalibracioni fajl nedostupan)",
+        }
+
+    return _thresholds_cache
 
 
 def get_risk_category_thresholds() -> dict:
-    """
-    Racuna granice kategorija rizika (nizak/srednji/visok) kao 33. i
-    67. percentil referentnog uzorka finalnih skorova. Ako uzorak nije
-    popunjen, vraca prethodne pretpostavljene vrijednosti (70/45) kao
-    fallback.
-    """
-    if len(_REFERENCE_FINAL_SCORES) < 5:
-        return {"low_threshold": 70, "high_threshold": 45, "source": "pretpostavljeno (nedovoljno podataka)"}
-
-    sorted_scores = sorted(_REFERENCE_FINAL_SCORES)
-    percentiles = statistics.quantiles(sorted_scores, n=3)  # [33. percentil, 67. percentil]
-
-    return {
-        "low_threshold": round(percentiles[1], 2),   # 67. percentil - granica za "Nizak rizik"
-        "high_threshold": round(percentiles[0], 2),  # 33. percentil - granica za "Visok rizik"
-        "source": f"empirijski, n={len(_REFERENCE_FINAL_SCORES)}",
-    }
+    return _load_risk_thresholds()
 
 
 def categorize_risk(score: float) -> str:
@@ -325,22 +424,17 @@ def calculate_final_risk_score(
     subscriber_count: int = None,
     weights: dict = None,
     weights_source: str = "roc",
+    primary_niche: str = None,
 ) -> dict:
-    """
-    Objedinjuje sve module u finalni risk score.
-
-    subscriber_count: broj pretplatnika kanala, koristi se da
-        engagement rate bude ocijenjen u odnosu na benchmark
-        prilagodjen velicini kanala.
-    """
+    """Objedinjuje sve module u finalni risk score."""
     if weights is None:
         roc_result = get_module_weights()
         weights = roc_result["weights"]
         weights_source = "roc"
 
     module_scores = {
-        "quantitative": normalize_quantitative_score(quant_metrics, subscriber_count),
-        "authenticity": normalize_authenticity_score(quant_metrics),
+        "quantitative": normalize_quantitative_score(quant_metrics, subscriber_count, primary_niche),
+        "authenticity": normalize_authenticity_score(quant_metrics, subscriber_count),
         "sentiment": normalize_sentiment_score(sentiment_result),
         "brand_fit": brand_fit_result["brand_fit_score"],
     }
@@ -350,6 +444,7 @@ def calculate_final_risk_score(
     cap_check_metrics = {
         "sentiment_score": sentiment_result["sentiment_score"],
         "subscriber_to_view_ratio": quant_metrics["subscriber_to_view_ratio"],
+        "subscriber_count": subscriber_count,
         "brand_fit_score": brand_fit_result["brand_fit_score"],
     }
 
@@ -364,24 +459,20 @@ def calculate_final_risk_score(
         "final_score": final_score,
         "risk_category": categorize_risk(final_score),
         "triggered_caps": cap_result["triggered_caps"],
+        "subscriber_tier": _get_tier_label(subscriber_count) if subscriber_count is not None else None,
+        "sentiment_diagnostics": build_sentiment_diagnostics(sentiment_result),
     }
 
 
 def calculate_bulk_risk_scores(creators_raw_data: list) -> list:
-    """
-    Racuna risk score za vise kreatora odjednom, koristeci entropijske
-    tezine izracunate IZ TOG KONKRETNOG BATCH-A.
-
-    creators_raw_data: lista dict-ova, svaki sa kljucevima
-        'quant_metrics', 'sentiment_result', 'brand_fit_result', 'stats'
-        (stats mora sadrzati 'subscriber_count').
-    """
+    """Risk score za vise kreatora odjednom, sa entropijskim tezinama iz tog batch-a."""
     all_module_scores = []
     for creator in creators_raw_data:
         subscriber_count = creator.get("stats", {}).get("subscriber_count")
+        primary_niche = creator.get("creator_persona", {}).get("primary_niche")
         scores = {
-            "quantitative": normalize_quantitative_score(creator["quant_metrics"], subscriber_count),
-            "authenticity": normalize_authenticity_score(creator["quant_metrics"]),
+            "quantitative": normalize_quantitative_score(creator["quant_metrics"], subscriber_count, primary_niche),
+            "authenticity": normalize_authenticity_score(creator["quant_metrics"], subscriber_count),
             "sentiment": normalize_sentiment_score(creator["sentiment_result"]),
             "brand_fit": creator["brand_fit_result"]["brand_fit_score"],
         }
@@ -398,11 +489,13 @@ def calculate_bulk_risk_scores(creators_raw_data: list) -> list:
 
     results = []
     for creator, module_scores in zip(creators_raw_data, all_module_scores):
+        subscriber_count = creator.get("stats", {}).get("subscriber_count")
         weighted_sum = sum(module_scores[key] * weights[key] for key in MODULE_LABELS)
 
         cap_check_metrics = {
             "sentiment_score": creator["sentiment_result"]["sentiment_score"],
             "subscriber_to_view_ratio": creator["quant_metrics"]["subscriber_to_view_ratio"],
+            "subscriber_count": subscriber_count,
             "brand_fit_score": creator["brand_fit_result"]["brand_fit_score"],
         }
         cap_result = apply_risk_caps(weighted_sum, cap_check_metrics)
@@ -416,17 +509,32 @@ def calculate_bulk_risk_scores(creators_raw_data: list) -> list:
             "final_score": final_score,
             "risk_category": categorize_risk(final_score),
             "triggered_caps": cap_result["triggered_caps"],
+            "subscriber_tier": _get_tier_label(subscriber_count) if subscriber_count is not None else None,
+            "sentiment_diagnostics": build_sentiment_diagnostics(creator["sentiment_result"]),
         })
 
     return results
 
 
-# Brzi test
 if __name__ == "__main__":
     from youtube_service import get_channel_stats, get_recent_video_ids, get_videos_stats, get_comments_for_videos
     from scoring import calculate_quantitative_metrics
     from ai_service import analyze_comments_batch
     from brand_fit import calculate_brand_fit_score
+
+    ref = get_sentiment_reference_stats()
+    print("=== REFERENTNA DISTRIBUCIJA SENTIMENTA ===")
+    if ref["available"]:
+        print(f"Kanala u uzorku : {ref['n_channels']} (iz {ref['n_comments']} komentara)")
+        print(f"mean / std      : {ref['mean']} / {ref['std']}")
+        print(f"cap prag        : {ref['cap_threshold']}")
+        print(f"Normalnost      : {ref['normality_test']}, p={ref['normality_p_value']}, "
+              f"odbacena={ref['normality_rejected']}, skewness={ref['skewness']}")
+    else:
+        print("NEDOSTUPNA - sentiment cap se nece aktivirati.")
+        print(f"Ocekivana putanja: {_SENTIMENT_REFERENCE_PATH}")
+        print("Pokreni: python scripts/calibrate_sentiment_reference.py <dataset.csv>")
+    print()
 
     handle = "@mkbhd"
     stats = get_channel_stats(handle)
@@ -447,9 +555,12 @@ if __name__ == "__main__":
 
     print("=== FINALNI RISK SCORE (ROC tezine) ===")
     print(f"Kanal: {stats['title']}")
+    print(f"Sloj velicine: {final_result['subscriber_tier']}")
     print(f"Tezine koriscene: {final_result['weights_used']} (izvor: {final_result['weights_source']})")
     print(f"Skorovi po modulima: {final_result['module_scores']}")
     print(f"Ponderisani skor (prije cap-a): {final_result['weighted_score_before_cap']}")
     print(f"FINALNI SKOR: {final_result['final_score']}")
     print(f"Kategorija: {final_result['risk_category']}")
     print(f"Aktivirani risk cap-ovi: {final_result['triggered_caps']}")
+    print(f"Sentiment dijagnostika: {final_result['sentiment_diagnostics']}")
+

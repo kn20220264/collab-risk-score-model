@@ -1,0 +1,66 @@
+{
+  "_opis": "Kalibracioni parovi brend-kreator za brand-fit modul.",
+  "_izvor_parova": "Semerádová, T. & Weinlich, P. (2023). Development of an Influencer-Brand Congruence Measurement Framework for Recommender Systems. SSRN preprint 4388448, Tabela 2. Kanali su birani po kriterijumu ponovljene, uspjesne saradnje sa navedenim brendom.",
+  "_uputstvo": "Popuniti polje 'handle' za svaki kanal (npr. '@mkbhd'). Kanali sa praznim handle-om se preskacu. Handle se nalazi u URL-u kanala na YouTube-u.",
+
+  "brendovi": {
+    "ThredUp": {
+      "opis": "Online thrift store and resale marketplace for secondhand clothing. Sells pre-owned women's and children's apparel, shoes and accessories from a wide range of labels. Positions itself around sustainable fashion, circular economy, affordable style and reducing textile waste. Target audience is predominantly female, interested in fashion and apparel, thrifting, vintage clothing and sustainable consumption.",
+      "_izvor_opisa": "Semeradova & Weinlich (2023), opis brenda u Metodama i podaci o publici iz Tabele 3 (Fashion and Apparel, zenska publika 75,29%)."
+    },
+    "Audible": {
+      "opis": "Audiobook and spoken-word entertainment subscription service. Offers a large catalogue of audiobooks, podcasts and original audio productions across fiction, non-fiction, self-development, business and education. Positions itself around learning while commuting or exercising, storytelling and making reading accessible. Target audience is broad and balanced by gender, interested in news and media, technology, gaming and general entertainment.",
+      "_izvor_opisa": "Semeradova & Weinlich (2023), opis brenda u Metodama i podaci o publici iz Tabele 3."
+    },
+    "Skillshare": {
+      "opis": "Online learning platform offering video courses taught by practitioners. Focuses on creative and professional skills such as illustration, graphic design, photography, video editing, animation, writing, freelancing and productivity. Positions itself around learning by doing, creative community and skill development. Target audience skews younger and slightly male, interested in technology, programming, graphics, multimedia and web design.",
+      "_izvor_opisa": "Semeradova & Weinlich (2023), opis brenda u Metodama i podaci o publici iz Tabele 3."
+    },
+    "Function of Beauty": {
+      "opis": "Customized beauty and personal care brand. Sells personalized shampoo, conditioner, skin care and body care formulated to individual hair type, scalp condition, goals and fragrance preferences. Positions itself around personalization, clean ingredients, cruelty-free formulation and self-care. Target audience is predominantly female and young, interested in beauty and cosmetics, skincare routines and social media.",
+      "_izvor_opisa": "Semeradova & Weinlich (2023), opis brenda u Metodama i podaci o publici iz Tabele 3."
+    }
+  },
+
+  "parovi": [
+    {"brend": "ThredUp", "kanal": "Rachel Maksy", "handle": "@rachelmaksy", "pretplatnika_u_radu": "998K", "tip_kanala": "Entertainment"},
+    {"brend": "ThredUp", "kanal": "Morgan Donner", "handle": "@MorganDonner", "pretplatnika_u_radu": "335K", "tip_kanala": "How to"},
+    {"brend": "ThredUp", "kanal": "Mia Maples", "handle": "@MiaMaples", "pretplatnika_u_radu": "3.29M", "tip_kanala": "Entertainment"},
+    {"brend": "ThredUp", "kanal": "Emma Chamberlain", "handle": "@emmachamberlain", "pretplatnika_u_radu": "11.6M", "tip_kanala": "Entertainment"},
+    {"brend": "ThredUp", "kanal": "Ellen Fisher", "handle": "@EllenFisher", "pretplatnika_u_radu": "728K", "tip_kanala": "Film"},
+    {"brend": "ThredUp", "kanal": "Carrie Dayton", "handle": "@CarrieDayton", "pretplatnika_u_radu": "425K", "tip_kanala": "People"},
+    {"brend": "ThredUp", "kanal": "Hannah Harrell", "handle": "@Hannahtharrell", "pretplatnika_u_radu": "103K", "tip_kanala": "People"},
+    {"brend": "ThredUp", "kanal": "Hannah - The Outfit Repeater", "handle": "@theoutfitrepeater", "pretplatnika_u_radu": "17.7K", "tip_kanala": "How to"},
+    {"brend": "ThredUp", "kanal": "THE WADS", "handle": "@KimberlyWhisk", "pretplatnika_u_radu": "339K", "tip_kanala": "How to"},
+
+    {"brend": "Audible", "kanal": "Doctor Mike", "handle": "@DoctorMike", "pretplatnika_u_radu": "9.77M", "tip_kanala": "Education"},
+    {"brend": "Audible", "kanal": "Dong ASMR", "handle": "@DongASMR", "pretplatnika_u_radu": "525K", "tip_kanala": "Entertainment"},
+    {"brend": "Audible", "kanal": "Jazza", "handle": "@Jazza", "pretplatnika_u_radu": "6.01M", "tip_kanala": "Entertainment"},
+    {"brend": "Audible", "kanal": "Sailing La Vagabonde", "handle": "@SailingLaVagabonde", "pretplatnika_u_radu": "1.76M", "tip_kanala": "Travel"},
+    {"brend": "Audible", "kanal": "Danielle Kirsty", "handle": "@DanielleKirsty", "pretplatnika_u_radu": "603K", "tip_kanala": "How to"},
+    {"brend": "Audible", "kanal": "KianAndJc", "handle": "@KianAndJc", "pretplatnika_u_radu": "3.83M", "tip_kanala": "Entertainment"},
+    {"brend": "Audible", "kanal": "Strange Parts", "handle": "@StrangeParts", "pretplatnika_u_radu": "1.84M", "tip_kanala": "Technology"},
+    {"brend": "Audible", "kanal": "Eric Rosen", "handle": "@eric-rosen", "pretplatnika_u_radu": "568K", "tip_kanala": "Games"},
+    {"brend": "Audible", "kanal": "Gibi ASMR", "handle": "@GibiASMR", "pretplatnika_u_radu": "4.3M", "tip_kanala": "Entertainment"},
+
+    {"brend": "Skillshare", "kanal": "TomKat Stitchery", "handle": "@TomKatStitchery", "pretplatnika_u_radu": "27.7K", "tip_kanala": "How to"},
+    {"brend": "Skillshare", "kanal": "Irene Rudnyk", "handle": "@IreneRudnyk", "pretplatnika_u_radu": "816K", "tip_kanala": "Education"},
+    {"brend": "Skillshare", "kanal": "REGRETLYSS", "handle": "@REGRETLYSS", "pretplatnika_u_radu": "87.2K", "tip_kanala": "People"},
+    {"brend": "Skillshare", "kanal": "Katnipp", "handle": "@KatnippStudios", "pretplatnika_u_radu": "170K", "tip_kanala": "People"},
+    {"brend": "Skillshare", "kanal": "aliyah simone", "handle": "@aliyahsimone", "pretplatnika_u_radu": "645K", "tip_kanala": "People"},
+    {"brend": "Skillshare", "kanal": "Plant Based Bride", "handle": "@PlantBasedBride", "pretplatnika_u_radu": "137K", "tip_kanala": "How to"},
+    {"brend": "Skillshare", "kanal": "Primink", "handle": "@Primink", "pretplatnika_u_radu": "1.04M", "tip_kanala": "Entertainment"},
+    {"brend": "Skillshare", "kanal": "The Bite Shot", "handle": "@TheBiteShot", "pretplatnika_u_radu": "314K", "tip_kanala": "Education"},
+    {"brend": "Skillshare", "kanal": "Jenna Hong", "handle": "@JennaHong", "pretplatnika_u_radu": "15.4K", "tip_kanala": "People"},
+
+    {"brend": "Function of Beauty", "kanal": "Bernadette Banner", "handle": "@bernadettebanner", "pretplatnika_u_radu": "1.31M", "tip_kanala": "Education"},
+    {"brend": "Function of Beauty", "kanal": "Glam&Gore", "handle": "@mykie", "pretplatnika_u_radu": "3.95M", "tip_kanala": "Entertainment"},
+    {"brend": "Function of Beauty", "kanal": "Kenna", "handle": "@KennaMarie", "pretplatnika_u_radu": "214K", "tip_kanala": "How to"},
+    {"brend": "Function of Beauty", "kanal": "Dr Dray", "handle": "@DrDrayzday", "pretplatnika_u_radu": "1.63M", "tip_kanala": "How to"},
+    {"brend": "Function of Beauty", "kanal": "Anjeez", "handle": "@Anjeez", "pretplatnika_u_radu": "26.5K", "tip_kanala": "How to"},
+    {"brend": "Function of Beauty", "kanal": "Hazel Goddesss", "handle": "@HazelGoddesss", "pretplatnika_u_radu": "231K", "tip_kanala": "How to"},
+    {"brend": "Function of Beauty", "kanal": "Abbey Yung", "handle": "@AbbeyYung", "pretplatnika_u_radu": "270K", "tip_kanala": "How to"},
+    {"brend": "Function of Beauty", "kanal": "Abby Cox", "handle": "@AbbyCox", "pretplatnika_u_radu": "246K", "tip_kanala": "How to"},
+    {"brend": "Function of Beauty", "kanal": "Bekah & Co.", "handle": "@Bekah_HairPro", "pretplatnika_u_radu": "6.29K", "tip_kanala": "People"}
+  ]
+}

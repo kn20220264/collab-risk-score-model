@@ -1,0 +1,55 @@
+{
+  "_opis": "Kalibracija gornje granice na deklarisanom skupu idealnih parova. Generisano skriptom scripts/calibrate_upper_bound.py.",
+  "kriterijum_ulaska": "Kreator cija primarna sadrzajna kategorija odgovara kategoriji proizvoda koje brend prodaje. Parovi zapisani prije mjerenja.",
+  "ogranicenja": "n=5, prigodan uzorak. Za dvije kombinacije vrijednost je bila poznata prije sastavljanja liste - moguca pristrasnost u izboru.",
+  "parovi": [
+    {
+      "handle": "@nikkietutorials",
+      "kanal": "NikkieTutorials",
+      "brend": "NYX",
+      "obrazlozenje": "beauty kreator x brend dekorativne kozmetike",
+      "cosine_similarity": 0.3565,
+      "nivo_profila": "Nivo 1+2"
+    },
+    {
+      "handle": "@mkbhd",
+      "kanal": "Marques Brownlee",
+      "brend": "Apple",
+      "obrazlozenje": "tech recenzent x proizvodjac potrosacke elektronike",
+      "cosine_similarity": 0.36,
+      "nivo_profila": "Nivo 1+2"
+    },
+    {
+      "handle": "@Mikecrack",
+      "kanal": "Mikecrack",
+      "brend": "Minecraft",
+      "obrazlozenje": "gaming kreator x igra koju primarno igra",
+      "cosine_similarity": 0.2938,
+      "nivo_profila": "Nivo 1+2"
+    },
+    {
+      "handle": "@drewbinsky",
+      "kanal": "Drew Binsky",
+      "brend": "Booking.com",
+      "obrazlozenje": "putopisni kreator x servis za rezervaciju smjestaja",
+      "cosine_similarity": 0.1527,
+      "nivo_profila": "Nivo 1+2"
+    },
+    {
+      "handle": "@ChloeTing",
+      "kanal": "Chloe Ting",
+      "brend": "Nike",
+      "obrazlozenje": "fitnes kreator x brend sportske opreme",
+      "cosine_similarity": 0.2061,
+      "nivo_profila": "Nivo 1+2"
+    }
+  ],
+  "kandidati_za_gornju_granicu": {
+    "medijana": 0.2938,
+    "aritmeticka_sredina": 0.2738,
+    "p75": 0.3565,
+    "maksimum": 0.36
+  },
+  "trenutna_gornja_granica": 0.4689,
+  "donja_granica": 0.1674
+}

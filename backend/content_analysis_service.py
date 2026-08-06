@@ -1,44 +1,4 @@
-"""
-Modul za dodatnu kvalitativnu analizu sadrzaja kanala (Creator Persona /
-Profanity / Brand Partners), po uzoru na dodatne "agente" komercijalnih
-alata poput CreatorScore.
-
-Za razliku od kvantitativnih modula (scoring.py, brand_fit.py), ove tri
-kategorije se ne mogu pouzdano izracunati deterministicki iz metapodataka
-- zahtijevaju razumijevanje PRIRODNOG JEZIKA (o cemu kreator prica, da li
-koristi psovke, koje brendove pominje i u kom kontekstu). Zato se, kao i
-kod explanation_service.py i brand_research_service.py, koristi Claude API
-- jedan strukturiran poziv koji vraca JSON, umjesto tri odvojena poziva
-(brzina/cijena).
-
-Ulaz je isti sadrzajni profil kanala koji koristi i brand_fit.py (naslovi
-videa, tagovi, transkript-isjecci) - vidi build_channel_content_summary
-u brand_fit.py za teorijsko obrazlozenje izbora ovih izvora.
-
-VAZNO OGRANICENJE (transparentno navedeno, ne skriveno): profanity
-analiza je ogranicena na video-e za koje je transkript dostupan (vidi
-transcript_service.py - podrazumijevano do 6 najnovijih), jer se psovke
-mogu pouzdano detektovati samo iz stvarnog izgovorenog teksta, ne iz
-naslova/tagova. "posts_analyzed" u odgovoru eksplicitno odrazava taj
-manji uzorak, a ne ukupan broj videa kanala.
-
-METODOLOSKO UPORISTE za zero-shot LLM klasifikaciju sadrzaja: tehnika
-kojom se strukturiran JSON izlaz dobija direktnim promptovanjem velikog
-jezickog modela (bez posebnog treniranja za ovaj konkretan zadatak) je
-utemeljena u: Brown, T.B. et al. (2020). "Language Models are Few-Shot
-Learners" (uvode i demonstriraju few-shot/zero-shot sposobnost GPT-3
-modela za razlicite NLP zadatke, ukljucujuci klasifikaciju), i Wei, J.
-et al. (2022). "Chain-of-Thought Prompting Elicits Reasoning in Large
-Language Models" (pokazuju da strukturirano promptovanje poboljsava
-preciznost zero-shot klasifikacije). Direktan presedan primjene ove
-tehnike na klasifikaciju sadrzaja drustvenih platformi u strukturisan
-JSON izlaz, sa istim obrazlozenjem izbora jeftinijeg/bzeg modela
-(cost-effectiveness, Strict JSON formatting support) je Daranda et al.
-(2025), koji koriste GPT-4o-mini za 18-kategorijsku klasifikaciju
-Telegram kanala. Ovaj rad operacionalizuje istu, vec utemeljenu tehniku
-na novu domenu (kategorizacija YouTube kreator-persone i detekcija
-brend partnerstva), ne uvodi novu metodu klasifikacije.
-"""
+"""Kvalitativna analiza sadrzaja kanala (creator persona / profanity / brand partners) preko Claude API-ja."""
 
 import os
 import json
@@ -94,11 +54,7 @@ def _build_content_block(channel_stats: dict, videos: list, transcripts: dict) -
 
 
 def _extract_json(text: str) -> dict:
-    """
-    Claude ponekad omota JSON u markdown code fence ili doda kratak uvod
-    uprkos instrukciji da odgovori samo sa JSON-om - ovo robustno izvlaci
-    prvi validan JSON objekat iz odgovora.
-    """
+    """Izvlaci prvi JSON objekat iz odgovora (Claude ga ponekad omota u code fence)."""
     start = text.find("{")
     end = text.rfind("}")
     if start == -1 or end == -1:
@@ -107,10 +63,7 @@ def _extract_json(text: str) -> dict:
 
 
 def analyze_creator_content(channel_stats: dict, videos: list, transcripts: dict) -> dict:
-    """
-    Vraca dict sa tri kljuca: creator_persona, profanity_analysis,
-    brand_partners - vidi main.py za nacin koriscenja u API odgovoru.
-    """
+    """Vraca dict sa creator_persona, profanity_analysis i brand_partners."""
     if not videos:
         return _EMPTY_RESULT
 
@@ -153,11 +106,7 @@ Sadrzaj kanala (broj videa sa transkriptom: {posts_with_transcript}/{len(videos)
     response = client.messages.create(
         model=MODEL,
         max_tokens=1200,
-        temperature=0,  # reproducibilnost odgovora - dobra praksa za
-                         # zero-shot LLM klasifikaciju, po uzoru na
-                         # metodologiju u 2411.18383v1.pdf (Nuclear
-                         # Energy Topic Modeling and Sentiment Analysis),
-                         # koji fiksira temperature na 0 iz istog razloga
+        temperature=0,  # reproducibilnost odgovora
         messages=[{"role": "user", "content": prompt}],
     )
 
@@ -211,7 +160,6 @@ Sadrzaj kanala (broj videa sa transkriptom: {posts_with_transcript}/{len(videos)
     }
 
 
-# Brzi test
 if __name__ == "__main__":
     from youtube_service import get_channel_stats, get_recent_video_ids, get_videos_stats
     from transcript_service import get_transcripts_for_videos
@@ -220,7 +168,7 @@ if __name__ == "__main__":
     stats = get_channel_stats(handle)
     video_ids = get_recent_video_ids(stats["channel_id"], max_results=20)
     videos = get_videos_stats(video_ids)
-    transcripts = get_transcripts_for_videos(video_ids, max_videos=6, max_words_per_video=50)
+    transcripts = get_transcripts_for_videos(video_ids, max_videos=12, max_words_per_video=350)
 
     result = analyze_creator_content(stats, videos, transcripts)
     print(json.dumps(result, indent=2, ensure_ascii=False))

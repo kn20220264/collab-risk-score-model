@@ -9,9 +9,7 @@ youtube = build("youtube", "v3", developerKey=API_KEY)
 
 
 def get_channel_id_from_handle(handle: str) -> str:
-    """
-    Pronalazi channel ID na osnovu @handle-a kanala (npr. '@mkbhd').
-    """
+    """Pronalazi channel ID na osnovu @handle-a kanala (npr. '@mkbhd')."""
     request = youtube.channels().list(
         part="id",
         forHandle=handle
@@ -25,9 +23,7 @@ def get_channel_id_from_handle(handle: str) -> str:
 
 
 def get_channel_stats(handle: str) -> dict:
-    """
-    Vraća osnovne statistike kanala na osnovu @handle-a.
-    """
+    """Vraća osnovne statistike kanala na osnovu @handle-a."""
     channel_id = get_channel_id_from_handle(handle)
 
     request = youtube.channels().list(
@@ -55,11 +51,8 @@ def get_channel_stats(handle: str) -> dict:
     }
 
 
-
 def get_channel_uploads_playlist_id(channel_id: str) -> str:
-    """
-    Vraća ID plejliste koja sadrži sve uploade kanala.
-    """
+    """Vraća ID plejliste koja sadrži sve uploade kanala."""
     request = youtube.channels().list(
         part="contentDetails",
         id=channel_id
@@ -69,9 +62,7 @@ def get_channel_uploads_playlist_id(channel_id: str) -> str:
 
 
 def get_recent_video_ids(channel_id: str, max_results: int = 20) -> list:
-    """
-    Vraća listu ID-jeva posljednjih N videa sa kanala.
-    """
+    """Vraća listu ID-jeva posljednjih N videa sa kanala."""
     uploads_playlist_id = get_channel_uploads_playlist_id(channel_id)
 
     request = youtube.playlistItems().list(
@@ -85,20 +76,7 @@ def get_recent_video_ids(channel_id: str, max_results: int = 20) -> list:
 
 
 def get_videos_stats(video_ids: list) -> list:
-    """
-    Vraća detaljne statistike (pregledi, lajkovi, komentari, datum) za listu video ID-jeva.
-    YouTube API dozvoljava do 50 ID-jeva po pozivu.
-
-    NIVO 1 OBOGACIVANJE SADRZAJNOG PROFILA (dodano za brand-fit modul):
-    Uz osnovne statistike, sada se povlace i:
-    - 'tags': kljucne rijeci koje kreator sam dodaje videu (SEO/kategorizacija,
-      cesto precizniji signal teme videa nego naslov)
-    - 'topic_categories': Wikipedia URL-ovi tema koje YOUTUBE SAM dodjeljuje
-      videu (part='topicDetails') - eksterna, standardizovana kategorizacija,
-      ne kreatorov subjektivan izbor rijeci. Ova polja se koriste u
-      brand_fit.py da obogate sadrzajni profil kanala prije racunanja
-      cosine similarity sa opisom brenda.
-    """
+    """Vraca statistike, opis, tagove i topic_categories za listu video ID-jeva (do 50 po pozivu)."""
     request = youtube.videos().list(
         part="snippet,statistics,topicDetails",
         id=",".join(video_ids)
@@ -114,6 +92,7 @@ def get_videos_stats(video_ids: list) -> list:
         videos.append({
             "video_id": item["id"],
             "title": item["snippet"]["title"],
+            "description": item["snippet"].get("description", ""),
             "published_at": item["snippet"]["publishedAt"],
             "view_count": int(stats.get("viewCount", 0)),
             "like_count": int(stats.get("likeCount", 0)),
@@ -125,10 +104,7 @@ def get_videos_stats(video_ids: list) -> list:
 
 
 def get_video_comments(video_id: str, max_results: int = 50) -> list:
-    """
-    Vraca listu komentara (tekst) za dati video.
-    Ako su komentari onemoguceni na videu, vraca praznu listu.
-    """
+    """Vraca listu komentara za dati video; praznu listu ako su onemoguceni."""
     comments = []
     try:
         request = youtube.commentThreads().list(
@@ -149,16 +125,14 @@ def get_video_comments(video_id: str, max_results: int = 50) -> list:
             })
 
     except Exception as e:
-        # Komentari mogu biti onemoguceni na videu, ili druga greska - ne prekidamo ceo proces
+        # komentari mogu biti onemoguceni na videu - ne prekidamo ceo proces
         print(f"  (Napomena: komentari nisu dostupni za video {video_id}: {e})")
 
     return comments
 
 
 def get_comments_for_videos(video_ids: list, max_per_video: int = 30) -> list:
-    """
-    Prikuplja komentare za listu videa i vraca ih kao jednu spojenu listu.
-    """
+    """Prikuplja komentare za listu videa i vraca ih kao jednu spojenu listu."""
     all_comments = []
     for video_id in video_ids:
         comments = get_video_comments(video_id, max_results=max_per_video)
@@ -166,9 +140,6 @@ def get_comments_for_videos(video_ids: list, max_per_video: int = 30) -> list:
     return all_comments
 
 
-
-
-# Brzi test — pokreni ovaj fajl direktno da provjeriš da radi
 if __name__ == "__main__":
     test_handle = "@mkbhd"
     stats = get_channel_stats(test_handle)

@@ -1,3 +1,7 @@
+# Local caches
+scripts/.brand_fit_cache.json
+scripts/.two_component_cache.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -216,3 +220,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+backend/brand_profile_cache.json
+
+scripts/.risk_thresholds_cache.json
+
+.brand_fit_cache.json

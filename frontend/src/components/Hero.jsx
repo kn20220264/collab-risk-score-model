@@ -1,3 +1,8 @@
+import { useState } from "react";
+import CreatorProfileCard from "./CreatorProfileCard";
+
+const API_BASE = "http://127.0.0.1:8000/api/v1/creators/youtube";
+
 function PreviewCard() {
   return (
     <div className="preview-card" aria-hidden="true">
@@ -47,39 +52,116 @@ function PreviewCard() {
 }
 
 function Hero() {
+  const [handle, setHandle] = useState("");
+  const [brand, setBrand] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [result, setResult] = useState(null);
+
+  async function handleAnalyze(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const params = new URLSearchParams({
+        brand_name: brand,
+        include_explanation: "true",
+      });
+      const cleanHandle = handle.replace(/^@/, "");
+
+      const response = await fetch(`${API_BASE}/${cleanHandle}?${params}`);
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.detail || "Analiza nije uspjela.");
+      }
+
+      const data = await response.json();
+      setResult(data.creator);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <section className="hero" id="top">
+    <section className={`hero${result ? "" : " hero-centered"}`} id="top">
       <div className="hero-inner">
         <div className="hero-copy">
-          <div className="eyebrow">Procjena rizika brend—kreator saradnje</div>
+          <div className="eyebrow">Procjena rizika saradnje brenda i kreatora</div>
           <h1>
-            Znaj tačno s kim sarađuješ, <span className="accent-text">prije potpisa</span>.
+            Procena rizika poslovnih partnera <span className="accent-text">zasnovana na podacima</span>.
           </h1>
           <p className="hero-subtitle">
-            Collab Risk Score analizira YouTube kreatora kroz četiri nezavisna
-            modula — kvantitativne metrike, autentičnost, sentiment i
-            brand-fit — i vraća transparentan skor rizika od 0 do 100, sa
-            AI obrazloženjem.
+            Na osnovu podataka o YouTube kreatoru i brendu generiše se skor rizika od 0 do 100, uz AI objašnjenje razloga koji utiču na rezultat.
           </p>
-          <div className="hero-actions">
-            <a href="#analyzer" className="btn btn-primary">
-              Analiziraj kreatora
-            </a>
-            <a href="#methodology" className="btn btn-ghost">
-              Pogledaj metodologiju
-            </a>
-          </div>
-          <div className="hero-chips">
-            <span className="chip">4 nezavisna modula</span>
-            <span className="chip">AHP + entropijske težine</span>
-            <span className="chip">Otvorena metodologija</span>
-          </div>
         </div>
 
         <div className="hero-visual">
           <PreviewCard />
         </div>
       </div>
+
+      <div className="hero-form-row">
+        <form className="hero-form" onSubmit={handleAnalyze}>
+          <div className="field">
+            <label htmlFor="handle">YouTube handle</label>
+            <input
+              id="handle"
+              type="text"
+              placeholder="@mkbhd"
+              value={handle}
+              onChange={(e) => setHandle(e.target.value)}
+              required
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="brand">Naziv brenda</label>
+            <input
+              id="brand"
+              type="text"
+              placeholder="Npr. Nike"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? "Analiziram..." : "Pokreni analizu"}
+          </button>
+        </form>
+
+        {loading && (
+          <div className="status-note status-note-left">
+            Prikupljam podatke sa YouTube-a, analiziram sentiment i brand-fit
+            — ovo moze potrajati do 30 sekundi.
+          </div>
+        )}
+
+        {error && <div className="error-note error-note-left">Greska: {error}</div>}
+      </div>
+
+      {result && (
+        <div className="results section-inner">
+          {result.brand_description_auto_generated && (
+            <div className="brand-desc-card">
+              <div className="brand-desc-label">
+                Opis brenda automatski generisan istraživanjem naziva "{brand}"
+              </div>
+              <p className="brand-desc-text">{result.brand_description_used}</p>
+            </div>
+          )}
+
+          {result.brand_fit_warning && (
+            <div className="warning-note">{result.brand_fit_warning}</div>
+          )}
+
+          <CreatorProfileCard creator={result} />
+        </div>
+      )}
     </section>
   );
 }

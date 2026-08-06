@@ -1,42 +1,8 @@
-"""
-Modul za automatsko istrazivanje brenda na osnovu samo naziva.
-
-Problem koji rjesava: brand-fit modul (brand_fit.py) racuna cosine
-similarity izmedju embeddinga OPISA BRENDA i sadrzaja kanala. Ako
-korisnik unese samo kratak/nepotpun opis (ili samo naziv), embedding
-tog teksta nosi premalo informacija da bi poredjenje bilo smisleno.
-
-Rjesenje: koristimo Claude API sa ugradjenim web_search alatom da
-AUTOMATSKI sastavimo opis brenda - koji se zatim koristi kao ulaz za
-brand_fit.calculate_brand_fit_score, umjesto korisnikovog sirovog teksta.
-
-VAZNA ISPRAVKA (otkrivena testiranjem, dokumentovano u poglavlju 4.3):
-Prva verzija ovog modula generisala je opise optimizovane za CITLJIVOST
-COVJEKU - ukljucivali su ciljnu demografiju, psihografske segmente,
-filozofiju brendiranja i ton komunikacije (npr. "brend kao zivotni
-stil", "cist, elegantan i nenametljiv ton"). Testiranjem na parovima
-MKBHD+Apple (teorijski gotovo idealan brand-fit slucaj: vodeci tech
-reviewer + najveci tech brend) pokazalo se da ovakav apstraktan,
-marketinski jezik daje NIZU cosine similarity nego kraci, konkretniji
-opis - jer se sadrzaj YouTube kanala (naslovi videa, opis kanala)
-sastoji od KONKRETNIH, PROIZVODNO-ORIJENTISANIH termina (npr. "iPhone
-15 Review"), koji se semanticki bolje poklapaju sa isto tako konkretnim
-opisom proizvoda nego sa apstraktnim opisom brend-filozofije.
-
-Ovo je operacionalizacija poznatog principa iz IR/NLP literature: veca
-duzina teksta sa vise raznorodnih tema (demografija + ton + filozofija)
-"razblazuje" (dilutes) semanticki signal usrednjavanjem, cineci
-embedding manje fokusiranim na kljucne, prepoznatljive koncepte.
-
-Zbog toga je prompt ispod izmijenjen da generise KRACI, PROIZVODNO/
-TEMATSKI fokusiran opis, optimizovan za embedding poredjenje, a ne za
-citljivost coyjeku. AI obrazlozenje (explanation_service.py) i dalje
-moze da koristi bogatiji, opisniji jezik - ali SAMO opis koji ulazi u
-embedding proracun je sada sveden na jezgro: kategorija, konkretni
-proizvodi/usluge, kljucne teme.
-"""
+"""Automatsko istrazivanje brenda preko web pretrage; opis se kesira po nazivu brenda radi reproducibilnosti brand-fit skora."""
 
 import os
+import re
+import json
 from dotenv import load_dotenv
 from anthropic import Anthropic
 
@@ -46,16 +12,46 @@ client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 MODEL = "claude-sonnet-4-6"
 
+_CACHE_PATH = os.path.join(os.path.dirname(__file__), "brand_profile_cache.json")
 
-def research_brand(brand_name: str) -> dict:
-    """
-    Istrazuje brend preko web pretrage i sastavlja KRATAK,
-    PROIZVODNO/TEMATSKI fokusiran opis pogodan za embedding-based
-    poredjenje sa sadrzajem kanala.
+def _load_cache() -> dict:
+    if os.path.exists(_CACHE_PATH):
+        try:
+            with open(_CACHE_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            return {}
+    return {}
 
-    Vraca dict sa generisanim opisom, radi transparentnosti u API
-    odgovoru.
-    """
+
+def _save_cache(cache: dict) -> None:
+    """Atomic write (tmp fajl + rename)."""
+    tmp_path = _CACHE_PATH + ".tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
+    os.replace(tmp_path, _CACHE_PATH)
+
+
+def _normalize_brand_key(brand_name: str) -> str:
+    return brand_name.strip().lower()
+
+def _clean_description(text: str) -> str:
+    """Uklanja markdown i visak razmaka iz opisa (ulazi u embedding)."""
+    text = re.sub(r"[*_#`]", "", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def research_brand(brand_name: str, force_refresh: bool = False) -> dict:
+    """Istrazuje brend preko web pretrage; rezultat se kesira po nazivu brenda. force_refresh zaobilazi kes."""
+    cache_key = _normalize_brand_key(brand_name)
+    cache = _load_cache()
+
+    if not force_refresh and cache_key in cache:
+        cached_result = dict(cache[cache_key])
+        cached_result["from_cache"] = True
+        return cached_result
+
     prompt = f"""Istrazi brend "{brand_name}" koristeci web pretragu.
 
 Sastavi KRATAK opis (30-50 rijeci, STROGO) koji sadrzi SAMO:
@@ -83,6 +79,8 @@ NE UKLJUCUJ (ovo je namjerno iskljuceno, ne propust):
 - Ton komunikacije ili stil brenda
 - Marketinske fraze, superlative ili prodajni jezik
 - Istoriju ili nagrade brenda
+- Markdown formatiranje (zvjezdice, crtice, naslove)
+- Naziv brenda na pocetku odgovora
 
 Piši GUSTO, kao listu kljucnih pojmova u recenici, ne kao marketinski
 tekst. Cilj je da ovaj opis embedding model moze direktno da poredi sa
@@ -106,17 +104,43 @@ opis na osnovu dostupnih podataka."""
     )
 
     text_parts = [block.text for block in response.content if block.type == "text"]
-    description = " ".join(text_parts).strip()
+    description = _clean_description(" ".join(text_parts))
+    
+    result = {
+        "brand_name": brand_name,
+        "generated_description": description,
+        "from_cache": False,
+    }
 
-    return {
+    cache[cache_key] = {
         "brand_name": brand_name,
         "generated_description": description,
     }
+    _save_cache(cache)
+
+    return result
 
 
-# Brzi test
+def clear_cached_brand(brand_name: str) -> bool:
+    """Brise keširani zapis za brend, ako postoji."""
+    cache_key = _normalize_brand_key(brand_name)
+    cache = _load_cache()
+
+    if cache_key in cache:
+        del cache[cache_key]
+        _save_cache(cache)
+        return True
+    return False
+
+
 if __name__ == "__main__":
     result = research_brand("Apple")
     print("=== GENERISANI OPIS BRENDA (novi, konkretan format) ===")
     print(result["generated_description"])
     print(f"\nBroj rijeci: {len(result['generated_description'].split())}")
+    print(f"Iz keša: {result['from_cache']}")
+
+    print("\n=== DRUGI POZIV ZA ISTI BREND (treba biti iz keša) ===")
+    result2 = research_brand("Apple")
+    print(f"Isti opis: {result['generated_description'] == result2['generated_description']}")
+    print(f"Iz keša: {result2['from_cache']}")

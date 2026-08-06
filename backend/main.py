@@ -1,31 +1,4 @@
-"""
-FastAPI aplikacija - Collab Risk Score API.
-
-Struktura endpoint-a je namjerno inspirisana komercijalnim API-jem
-CreatorScore (creatorscore.io), radi lakseg poredjenja u poglavlju 3
-rada (pregled alata):
-
-- GET /api/v1/creators/youtube/{handle}  - analiza jednog kreatora
-  (analogno GET /api/v1/creators/{platform}/{handle} kod CreatorScore)
-- POST /api/v1/creators/bulk             - analiza vise kreatora odjednom
-  (analogno POST /api/v1/creators/bulk kod CreatorScore), koristi
-  entropijske tezine izracunate iz tog batch-a
-- GET /api/v1/methodology                - transparentan prikaz cijele
-  metodologije (AHP matrica, tezine, CR, risk cap pravila) - ovo je
-  namjerna razlika u odnosu na CreatorScore i slicne komercijalne
-  alate, ciji algoritmi nisu javno objavljeni ("crna kutija"); ovaj
-  endpoint je direktan argument za poglavlje 3 (transparentnost kao
-  prednost akademskog/otvorenog pristupa nasuprot proprietary alatima).
-
-Zadrzan je i stari POST /analyze endpoint (deprecated) radi
-kompatibilnosti sa postojecim frontend-om dok se ne prebaci na novu
-strukturu.
-
-Dodato (Creator Persona / Profanity / Brand Partners / Audience
-Health / Content Analyzed): prosirenje po uzoru na dodatne "agente"
-komercijalnih alata (vidi content_analysis_service.py za detaljno
-metodolosko obrazlozenje).
-"""
+"""FastAPI aplikacija - Collab Risk Score API."""
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -68,10 +41,6 @@ app.add_middleware(
 )
 
 
-# ---------------------------------------------------------------------
-# Pydantic modeli
-# ---------------------------------------------------------------------
-
 class AnalyzeRequest(BaseModel):
     channel_handle: str
     brand_description: str
@@ -79,18 +48,21 @@ class AnalyzeRequest(BaseModel):
 
 class BulkCreatorRequest(BaseModel):
     channel_handle: str
-    brand_description: str
+    brand_description: Optional[str] = None
+    brand_name: Optional[str] = None
+    force_refresh_brand: bool = False
 
 
 class BulkAnalyzeRequest(BaseModel):
     creators: list[BulkCreatorRequest]
 
 
-# ---------------------------------------------------------------------
-# Interna pomocna funkcija - prikuplja podatke i racuna module za JEDAN kanal
-# ---------------------------------------------------------------------
-
-def _gather_and_score(channel_handle: str, brand_description: str = None, brand_name: str = None) -> dict:
+def _gather_and_score(
+    channel_handle: str,
+    brand_description: str = None,
+    brand_name: str = None,
+    force_refresh_brand: bool = False,
+) -> dict:
     if not brand_description and not brand_name:
         raise HTTPException(
             status_code=400,
@@ -98,10 +70,12 @@ def _gather_and_score(channel_handle: str, brand_description: str = None, brand_
         )
 
     generated_description = None
+    brand_from_cache = None
     if not brand_description and brand_name:
-        research_result = research_brand(brand_name)
+        research_result = research_brand(brand_name, force_refresh=force_refresh_brand)
         brand_description = research_result["generated_description"]
         generated_description = brand_description
+        brand_from_cache = research_result.get("from_cache", False)
 
     try:
         stats = get_channel_stats(channel_handle)
@@ -117,6 +91,8 @@ def _gather_and_score(channel_handle: str, brand_description: str = None, brand_
     sentiment_result = analyze_comments_batch(comments)
     brand_fit_result = calculate_brand_fit_score(brand_description, stats, videos, transcripts=transcripts)
 
+    content_analysis = analyze_creator_content(stats, videos, transcripts)
+
     return {
         "stats": stats,
         "videos": videos,
@@ -126,6 +102,10 @@ def _gather_and_score(channel_handle: str, brand_description: str = None, brand_
         "brand_fit_result": brand_fit_result,
         "brand_description_used": brand_description,
         "brand_description_auto_generated": generated_description is not None,
+        "brand_description_from_cache": brand_from_cache,
+        "creator_persona": content_analysis.get("creator_persona"),
+        "profanity_analysis": content_analysis.get("profanity_analysis"),
+        "brand_partners": content_analysis.get("brand_partners"),
     }
 
 
@@ -141,33 +121,9 @@ def _tier_from_score(score: float) -> str:
         return "Poor"
 
 
-def _compute_audience_health(quant_metrics: dict, sentiment_result: dict) -> dict:
-    """
-    'Audience Health' sekcija (po uzoru na CreatorScore-ovu istoimenu
-    kategoriju) - koristi vec postojece metrike, samo preformulisane
-    u citljiviji format:
-    - bot_activity_pct: proksi preko subscriber_to_view_ratio (visi
-      odnos = veca sumnja na neaktivnu/kupljenu bazu, vidi
-      scoring.py/risk_aggregation.py za teorijsko obrazlozenje)
-    - toxic_pct: % negativnih komentara iz sentiment analize
-    """
-    ratio = quant_metrics.get("subscriber_to_view_ratio", 0)
-    # USKLADJENO sa normalize_authenticity_score (risk_aggregation.py) -
-    # oba mjesta sada koriste isti mnozilac (3) za istu osnovnu ideju
-    # (subscriber-to-view ratio kao proksi autenticnosti/bot aktivnosti).
-    #
-    # METODOLOSKO OGRANICENJE (transparentno, ne skriveno): mnozilac 3
-    # je HEURISTIKA, ne empirijski izveden broj. Pravi akademski
-    # pristup za ovu vrstu proraciuna (Developing a Multimodal Approach
-    # to Channel Characterization on YouTube) NE koristi pretpostavljen
-    # mnozilac - umjesto toga, racuna Cohen's d effect size za svaku
-    # metriku na osnovu STVARNOG dataseta aktivnih i suspendovanih
-    # (potvrdjeno anomalnih) kanala, i koristi taj Cohen's d kao tezinu.
-    # Takav pristup zahtijeva label-ovan dataset poznato-suspendovanih
-    # kanala, sto nadilazi obim ovog rada - vidi napomenu u
-    # normalize_authenticity_score (risk_aggregation.py) i poglavlje
-    # "Ogranicenja i buduci rad".
-    bot_activity_pct = round(min(ratio * 3, 100), 1)
+def _compute_audience_health(quant_metrics: dict, sentiment_result: dict, authenticity_score: float) -> dict:
+    """'Audience Health' sekcija: bot_activity_pct iz authenticity_score, toxic_pct iz sentimenta."""
+    bot_activity_pct = round(100 - authenticity_score, 1)
 
     toxic_pct = round(sentiment_result.get("negative_pct", 0), 1)
 
@@ -193,20 +149,13 @@ def _compute_audience_health(quant_metrics: dict, sentiment_result: dict) -> dic
 
 
 def _compute_content_analyzed(quant_metrics: dict, sentiment_result: dict) -> dict:
-    """
-    'Content Analyzed' sekcija - samo pregled obima podataka koriscenih
-    u analizi (transparentnost, ne nova metrika).
-    """
+    """'Content Analyzed' sekcija - obim podataka koriscenih u analizi."""
     return {
         "posts_analyzed": quant_metrics.get("sample_size", 0),
         "comments_analyzed": sentiment_result.get("sample_size", 0),
-        "platforms": 1,  # samo YouTube - eksplicitno, za razliku od multi-platform alata
+        "platforms": 1,  # samo YouTube
     }
 
-
-# ---------------------------------------------------------------------
-# Endpoint-i
-# ---------------------------------------------------------------------
 
 @app.get("/")
 def read_root():
@@ -215,14 +164,7 @@ def read_root():
 
 @app.get("/api/v1/methodology")
 def get_methodology():
-    """
-    Transparentan prikaz cijele metodologije agregacije:
-    - AHP pairwise comparison matrica i izracunate tezine (sa CR)
-    - Risk cap pravila (IF-THEN mapiranje)
-
-    Namjerna razlika u odnosu na komercijalne alate (CreatorScore,
-    HypeAuditor), ciji algoritmi nisu javno objavljeni.
-    """
+    """Transparentan prikaz metodologije: AHP tezine (sa CR) i risk cap pravila."""
     roc_result = get_module_weights()
 
     risk_cap_description = [
@@ -261,19 +203,37 @@ def get_creator_score(
     brand_description: str = Query(None, description="Detaljan opis brenda (opciono ako je dat brand_name)"),
     brand_name: str = Query(None, description="Samo naziv brenda - opis se generise automatski istrazivanjem"),
     include_explanation: bool = Query(False, description="Da li ukljuciti AI-generisano tekstualno obrazlozenje"),
+    force_refresh_brand: bool = Query(
+        False,
+        description=(
+            "Ako je True, zaobilazi kesiran opis brenda (ako postoji) i "
+            "generise nov preko web istrazivanja. Default (False) koristi "
+            "kesiran opis radi reproducibilnosti brand-fit skora - vidi "
+            "poglavlje 4.3."
+        ),
+    ),
 ):
     if not handle.startswith("@"):
         handle = f"@{handle}"
 
-    data = _gather_and_score(handle, brand_description=brand_description, brand_name=brand_name)
+    data = _gather_and_score(
+        handle,
+        brand_description=brand_description,
+        brand_name=brand_name,
+        force_refresh_brand=force_refresh_brand,
+    )
+
+    primary_niche = (data.get("creator_persona") or {}).get("primary_niche")
 
     risk_result = calculate_final_risk_score(
         data["quant_metrics"], data["sentiment_result"], data["brand_fit_result"],
         subscriber_count=data["stats"]["subscriber_count"],
+        primary_niche=primary_niche,
     )
 
-    content_analysis = analyze_creator_content(data["stats"], data["videos"], data["transcripts"])
-    audience_health = _compute_audience_health(data["quant_metrics"], data["sentiment_result"])
+    audience_health = _compute_audience_health(
+        data["quant_metrics"], data["sentiment_result"], risk_result["module_scores"]["authenticity"]
+    )
     content_analyzed = _compute_content_analyzed(data["quant_metrics"], data["sentiment_result"])
 
     response = {
@@ -293,11 +253,13 @@ def get_creator_score(
             "weights_used": risk_result["weights_used"],
             "weights_source": risk_result["weights_source"],
             "triggered_risk_flags": risk_result["triggered_caps"],
+            "subscriber_tier": risk_result.get("subscriber_tier"),
             "brand_description_used": data["brand_description_used"],
             "brand_description_auto_generated": data["brand_description_auto_generated"],
-            "creator_persona": content_analysis.get("creator_persona"),
-            "profanity_analysis": content_analysis.get("profanity_analysis"),
-            "brand_partners": content_analysis.get("brand_partners"),
+            "brand_description_from_cache": data["brand_description_from_cache"],
+            "creator_persona": data.get("creator_persona"),
+            "profanity_analysis": data.get("profanity_analysis"),
+            "brand_partners": data.get("brand_partners"),
             "audience_health": audience_health,
             "content_analyzed": content_analyzed,
             "brand_fit_warning": data["brand_fit_result"].get("warning"),
@@ -315,13 +277,7 @@ def get_creator_score(
 
 @app.post("/api/v1/creators/bulk")
 def bulk_creator_scores(request: BulkAnalyzeRequest):
-    """
-    Analiza vise kreatora odjednom. Koristi entropijske tezine
-    izracunate iz cijelog batch-a (objektivna alternativa AHP tezinama
-    - vidi entropy_service.py), analogno CreatorScore bulk endpoint-u,
-    uz razliku da je metodologija tezinjenja transparentna i
-    prilagodjena samom uzorku, a ne fiksna.
-    """
+    """Analiza vise kreatora odjednom, koristi entropijske tezine izracunate iz cijelog batch-a."""
     if len(request.creators) > 25:
         raise HTTPException(
             status_code=400,
@@ -336,7 +292,12 @@ def bulk_creator_scores(request: BulkAnalyzeRequest):
             handle = f"@{handle}"
         handles.append(handle)
 
-        data = _gather_and_score(handle, brand_description=creator.brand_description)
+        data = _gather_and_score(
+            handle,
+            brand_description=creator.brand_description,
+            brand_name=creator.brand_name,
+            force_refresh_brand=creator.force_refresh_brand,
+        )
         raw_data.append(data)
 
     bulk_results = calculate_bulk_risk_scores(raw_data)
@@ -352,6 +313,10 @@ def bulk_creator_scores(request: BulkAnalyzeRequest):
             "risk_category": risk_result["risk_category"],
             "modules": risk_result["module_scores"],
             "triggered_risk_flags": risk_result["triggered_caps"],
+            "subscriber_tier": risk_result.get("subscriber_tier"),
+            "brand_description_used": data["brand_description_used"],
+            "brand_description_from_cache": data["brand_description_from_cache"],
+            "creator_persona": data.get("creator_persona"),
         })
 
     weights_source = bulk_results[0]["weights_source"] if bulk_results else None
@@ -367,29 +332,28 @@ def bulk_creator_scores(request: BulkAnalyzeRequest):
     }
 
 
-# ---------------------------------------------------------------------
-# Stari endpoint - zadrzan radi kompatibilnosti sa postojecim frontend-om
-# ---------------------------------------------------------------------
+# Stari endpoint (deprecated) - zadrzan radi kompatibilnosti sa postojecim frontend-om
 
 @app.post("/analyze")
 def analyze_channel(request: AnalyzeRequest):
-    """
-    DEPRECATED - koristiti GET /api/v1/creators/youtube/{handle}.
-    Zadrzano dok se frontend ne prebaci na novu strukturu.
-    """
+    """DEPRECATED - koristiti GET /api/v1/creators/youtube/{handle}."""
     data = _gather_and_score(request.channel_handle, brand_description=request.brand_description)
+
+    primary_niche = (data.get("creator_persona") or {}).get("primary_niche")
 
     final_result = calculate_final_risk_score(
         data["quant_metrics"], data["sentiment_result"], data["brand_fit_result"],
         subscriber_count=data["stats"]["subscriber_count"],
+        primary_niche=primary_niche,
     )
 
     explanation = generate_risk_explanation(
         data["stats"]["title"], request.brand_description, final_result
     )
 
-    content_analysis = analyze_creator_content(data["stats"], data["videos"], data["transcripts"])
-    audience_health = _compute_audience_health(data["quant_metrics"], data["sentiment_result"])
+    audience_health = _compute_audience_health(
+        data["quant_metrics"], data["sentiment_result"], final_result["module_scores"]["authenticity"]
+    )
     content_analyzed = _compute_content_analyzed(data["quant_metrics"], data["sentiment_result"])
 
     return {
@@ -403,9 +367,9 @@ def analyze_channel(request: AnalyzeRequest):
         "brand_fit": data["brand_fit_result"],
         "risk_assessment": final_result,
         "ai_explanation": explanation,
-        "creator_persona": content_analysis.get("creator_persona"),
-        "profanity_analysis": content_analysis.get("profanity_analysis"),
-        "brand_partners": content_analysis.get("brand_partners"),
+        "creator_persona": data.get("creator_persona"),
+        "profanity_analysis": data.get("profanity_analysis"),
+        "brand_partners": data.get("brand_partners"),
         "audience_health": audience_health,
         "content_analyzed": content_analyzed,
     }

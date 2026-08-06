@@ -1,0 +1,1255 @@
+{
+  "tezine": {
+    "sadrzaj": 0.75,
+    "kategorija": 0.25,
+    "metod": "ROC, n=2"
+  },
+  "jednokomponentna": {
+    "cliffs_delta": 0.5133,
+    "p": 3.902952376177993e-06
+  },
+  "dvokomponentna": {
+    "cliffs_delta": 0.4374,
+    "p": 6.964119984109729e-05
+  },
+  "opseg_sadrzaj": [
+    0.0893,
+    0.3767
+  ],
+  "opseg_kategorija": [
+    0.0881,
+    0.2264
+  ],
+  "kategorije_brendova": {
+    "Audible": "Digitalna zabava i mediji, audio sadržaj. Slušanje audioknjigas pretplatom ili",
+    "Function of Beauty": "Industrija njege kose i tijela, personalizirana kozmetika",
+    "Skillshare": "Online obrazovanje, kursevi na zahtjev. Gledanje video lekcija iz grafičkog",
+    "ThredUp": "Online thrift i konsignacijska trgovina"
+  },
+  "sve_kombinacije": [
+    {
+      "kanal": "Hannah - The Outfit Repeater",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.3769,
+      "sim_kategorija": 0.1607,
+      "skor_stari": 100.0,
+      "skor_novi": 88.12
+    },
+    {
+      "kanal": "Abbey Yung",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.3767,
+      "sim_kategorija": 0.1479,
+      "skor_stari": 100.0,
+      "skor_novi": 85.81
+    },
+    {
+      "kanal": "Carrie Dayton",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.3706,
+      "sim_kategorija": 0.1495,
+      "skor_stari": 97.88,
+      "skor_novi": 84.51
+    },
+    {
+      "kanal": "Hazel Goddesss",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.369,
+      "sim_kategorija": 0.1479,
+      "skor_stari": 97.32,
+      "skor_novi": 83.8
+    },
+    {
+      "kanal": "Bekah & Co.",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.3172,
+      "sim_kategorija": 0.201,
+      "skor_stari": 79.3,
+      "skor_novi": 79.88
+    },
+    {
+      "kanal": "Morgan Donner",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.3207,
+      "sim_kategorija": 0.1778,
+      "skor_stari": 80.51,
+      "skor_novi": 76.6
+    },
+    {
+      "kanal": "Hannah Harrell",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2788,
+      "sim_kategorija": 0.2376,
+      "skor_stari": 65.94,
+      "skor_novi": 74.45
+    },
+    {
+      "kanal": "Mia Maples",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2638,
+      "sim_kategorija": 0.234,
+      "skor_stari": 60.72,
+      "skor_novi": 70.54
+    },
+    {
+      "kanal": "Mia Maples",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.3041,
+      "sim_kategorija": 0.1485,
+      "skor_stari": 74.74,
+      "skor_novi": 66.97
+    },
+    {
+      "kanal": "TomKat Stitchery",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.282,
+      "sim_kategorija": 0.1679,
+      "skor_stari": 67.05,
+      "skor_novi": 64.71
+    },
+    {
+      "kanal": "aliyah simone",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2379,
+      "sim_kategorija": 0.2239,
+      "skor_stari": 51.7,
+      "skor_novi": 63.32
+    },
+    {
+      "kanal": "Kenna",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2352,
+      "sim_kategorija": 0.2232,
+      "skor_stari": 50.77,
+      "skor_novi": 62.5
+    },
+    {
+      "kanal": "Doctor Mike",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2343,
+      "sim_kategorija": 0.2235,
+      "skor_stari": 50.45,
+      "skor_novi": 62.31
+    },
+    {
+      "kanal": "Gibi ASMR",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2318,
+      "sim_kategorija": 0.2264,
+      "skor_stari": 49.58,
+      "skor_novi": 62.19
+    },
+    {
+      "kanal": "Jenna Hong",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.231,
+      "sim_kategorija": 0.2591,
+      "skor_stari": 49.3,
+      "skor_novi": 61.97
+    },
+    {
+      "kanal": "Dr Dray",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2431,
+      "sim_kategorija": 0.2018,
+      "skor_stari": 53.51,
+      "skor_novi": 60.69
+    },
+    {
+      "kanal": "Carrie Dayton",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2247,
+      "sim_kategorija": 0.2321,
+      "skor_stari": 47.11,
+      "skor_novi": 60.33
+    },
+    {
+      "kanal": "Plant Based Bride",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2805,
+      "sim_kategorija": 0.1285,
+      "skor_stari": 66.53,
+      "skor_novi": 57.2
+    },
+    {
+      "kanal": "Dong ASMR",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2195,
+      "sim_kategorija": 0.2145,
+      "skor_stari": 45.3,
+      "skor_novi": 56.82
+    },
+    {
+      "kanal": "The Bite Shot",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2649,
+      "sim_kategorija": 0.1474,
+      "skor_stari": 61.1,
+      "skor_novi": 56.54
+    },
+    {
+      "kanal": "Jenna Hong",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2426,
+      "sim_kategorija": 0.1778,
+      "skor_stari": 53.34,
+      "skor_novi": 56.22
+    },
+    {
+      "kanal": "Sailing La Vagabonde",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.226,
+      "sim_kategorija": 0.1982,
+      "skor_stari": 47.56,
+      "skor_novi": 55.57
+    },
+    {
+      "kanal": "Katnipp",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2058,
+      "sim_kategorija": 0.2675,
+      "skor_stari": 40.54,
+      "skor_novi": 55.41
+    },
+    {
+      "kanal": "Carrie Dayton",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2093,
+      "sim_kategorija": 0.218,
+      "skor_stari": 41.75,
+      "skor_novi": 54.79
+    },
+    {
+      "kanal": "TomKat Stitchery",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2012,
+      "sim_kategorija": 0.2585,
+      "skor_stari": 38.94,
+      "skor_novi": 54.2
+    },
+    {
+      "kanal": "Emma Chamberlain",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.201,
+      "sim_kategorija": 0.2382,
+      "skor_stari": 38.87,
+      "skor_novi": 54.15
+    },
+    {
+      "kanal": "Primink",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2007,
+      "sim_kategorija": 0.2408,
+      "skor_stari": 38.76,
+      "skor_novi": 54.07
+    },
+    {
+      "kanal": "Strange Parts",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2118,
+      "sim_kategorija": 0.208,
+      "skor_stari": 42.62,
+      "skor_novi": 53.64
+    },
+    {
+      "kanal": "Dr Dray",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1977,
+      "sim_kategorija": 0.231,
+      "skor_stari": 37.72,
+      "skor_novi": 53.29
+    },
+    {
+      "kanal": "aliyah simone",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1979,
+      "sim_kategorija": 0.2234,
+      "skor_stari": 37.79,
+      "skor_novi": 52.8
+    },
+    {
+      "kanal": "Danielle Kirsty",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.251,
+      "sim_kategorija": 0.1459,
+      "skor_stari": 56.26,
+      "skor_novi": 52.64
+    },
+    {
+      "kanal": "Mia Maples",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2209,
+      "sim_kategorija": 0.1879,
+      "skor_stari": 45.79,
+      "skor_novi": 52.38
+    },
+    {
+      "kanal": "Anjeez",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.1949,
+      "sim_kategorija": 0.2189,
+      "skor_stari": 36.74,
+      "skor_novi": 51.2
+    },
+    {
+      "kanal": "Jazza",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2302,
+      "sim_kategorija": 0.1678,
+      "skor_stari": 49.03,
+      "skor_novi": 51.18
+    },
+    {
+      "kanal": "Abby Cox",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2626,
+      "sim_kategorija": 0.1179,
+      "skor_stari": 60.3,
+      "skor_novi": 50.61
+    },
+    {
+      "kanal": "Anjeez",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1927,
+      "sim_kategorija": 0.2175,
+      "skor_stari": 35.98,
+      "skor_novi": 50.38
+    },
+    {
+      "kanal": "Morgan Donner",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1839,
+      "sim_kategorija": 0.2591,
+      "skor_stari": 32.92,
+      "skor_novi": 49.69
+    },
+    {
+      "kanal": "Ellen Fisher",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2093,
+      "sim_kategorija": 0.1892,
+      "skor_stari": 41.75,
+      "skor_novi": 49.59
+    },
+    {
+      "kanal": "Danielle Kirsty",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.1792,
+      "sim_kategorija": 0.2679,
+      "skor_stari": 31.28,
+      "skor_novi": 48.46
+    },
+    {
+      "kanal": "Katnipp",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2008,
+      "sim_kategorija": 0.1894,
+      "skor_stari": 38.8,
+      "skor_novi": 47.41
+    },
+    {
+      "kanal": "Abby Cox",
+      "brend": "Function of Beauty",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.1779,
+      "sim_kategorija": 0.2201,
+      "skor_stari": 30.83,
+      "skor_novi": 46.98
+    },
+    {
+      "kanal": "Katnipp",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2232,
+      "sim_kategorija": 0.1544,
+      "skor_stari": 46.59,
+      "skor_novi": 46.93
+    },
+    {
+      "kanal": "Jenna Hong",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1904,
+      "sim_kategorija": 0.1988,
+      "skor_stari": 35.18,
+      "skor_novi": 46.4
+    },
+    {
+      "kanal": "The Bite Shot",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1712,
+      "sim_kategorija": 0.229,
+      "skor_stari": 28.5,
+      "skor_novi": 46.38
+    },
+    {
+      "kanal": "Jazza",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2124,
+      "sim_kategorija": 0.1664,
+      "skor_stari": 42.83,
+      "skor_novi": 46.28
+    },
+    {
+      "kanal": "Jenna Hong",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.213,
+      "sim_kategorija": 0.1644,
+      "skor_stari": 43.04,
+      "skor_novi": 46.07
+    },
+    {
+      "kanal": "Hannah Harrell",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1908,
+      "sim_kategorija": 0.1957,
+      "skor_stari": 35.32,
+      "skor_novi": 45.94
+    },
+    {
+      "kanal": "REGRETLYSS",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1934,
+      "sim_kategorija": 0.191,
+      "skor_stari": 36.22,
+      "skor_novi": 45.77
+    },
+    {
+      "kanal": "Abby Cox",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1726,
+      "sim_kategorija": 0.2193,
+      "skor_stari": 28.98,
+      "skor_novi": 45.45
+    },
+    {
+      "kanal": "Irene Rudnyk",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1702,
+      "sim_kategorija": 0.2223,
+      "skor_stari": 28.15,
+      "skor_novi": 45.37
+    },
+    {
+      "kanal": "Hannah Harrell",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2236,
+      "sim_kategorija": 0.1445,
+      "skor_stari": 46.73,
+      "skor_novi": 45.24
+    },
+    {
+      "kanal": "Bekah & Co.",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1969,
+      "sim_kategorija": 0.1814,
+      "skor_stari": 37.44,
+      "skor_novi": 44.95
+    },
+    {
+      "kanal": "KianAndJc",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2013,
+      "sim_kategorija": 0.1745,
+      "skor_stari": 38.97,
+      "skor_novi": 44.85
+    },
+    {
+      "kanal": "Rachel Maksy",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1642,
+      "sim_kategorija": 0.2593,
+      "skor_stari": 26.06,
+      "skor_novi": 44.55
+    },
+    {
+      "kanal": "Mia Maples",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2164,
+      "sim_kategorija": 0.151,
+      "skor_stari": 44.22,
+      "skor_novi": 44.54
+    },
+    {
+      "kanal": "The Bite Shot",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1635,
+      "sim_kategorija": 0.2452,
+      "skor_stari": 25.82,
+      "skor_novi": 44.37
+    },
+    {
+      "kanal": "Hannah - The Outfit Repeater",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1634,
+      "sim_kategorija": 0.2372,
+      "skor_stari": 25.78,
+      "skor_novi": 44.34
+    },
+    {
+      "kanal": "Ellen Fisher",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1971,
+      "sim_kategorija": 0.176,
+      "skor_stari": 37.51,
+      "skor_novi": 44.02
+    },
+    {
+      "kanal": "Irene Rudnyk",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2133,
+      "sim_kategorija": 0.1485,
+      "skor_stari": 43.15,
+      "skor_novi": 43.28
+    },
+    {
+      "kanal": "Rachel Maksy",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2005,
+      "sim_kategorija": 0.1661,
+      "skor_stari": 38.69,
+      "skor_novi": 43.12
+    },
+    {
+      "kanal": "Rachel Maksy",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1584,
+      "sim_kategorija": 0.2238,
+      "skor_stari": 24.04,
+      "skor_novi": 42.56
+    },
+    {
+      "kanal": "Kenna",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1594,
+      "sim_kategorija": 0.2181,
+      "skor_stari": 24.39,
+      "skor_novi": 41.79
+    },
+    {
+      "kanal": "Emma Chamberlain",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1783,
+      "sim_kategorija": 0.1905,
+      "skor_stari": 30.97,
+      "skor_novi": 41.74
+    },
+    {
+      "kanal": "Gibi ASMR",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1957,
+      "sim_kategorija": 0.1644,
+      "skor_stari": 37.02,
+      "skor_novi": 41.56
+    },
+    {
+      "kanal": "Strange Parts",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2014,
+      "sim_kategorija": 0.1532,
+      "skor_stari": 39.0,
+      "skor_novi": 41.02
+    },
+    {
+      "kanal": "Katnipp",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1707,
+      "sim_kategorija": 0.1932,
+      "skor_stari": 28.32,
+      "skor_novi": 40.24
+    },
+    {
+      "kanal": "Primink",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1903,
+      "sim_kategorija": 0.1615,
+      "skor_stari": 35.14,
+      "skor_novi": 39.62
+    },
+    {
+      "kanal": "Gibi ASMR",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1923,
+      "sim_kategorija": 0.1584,
+      "skor_stari": 35.84,
+      "skor_novi": 39.59
+    },
+    {
+      "kanal": "Ellen Fisher",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2074,
+      "sim_kategorija": 0.1349,
+      "skor_stari": 41.09,
+      "skor_novi": 39.28
+    },
+    {
+      "kanal": "aliyah simone",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2095,
+      "sim_kategorija": 0.1319,
+      "skor_stari": 41.82,
+      "skor_novi": 39.28
+    },
+    {
+      "kanal": "Morgan Donner",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1626,
+      "sim_kategorija": 0.1988,
+      "skor_stari": 25.5,
+      "skor_novi": 39.14
+    },
+    {
+      "kanal": "Kenna",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2058,
+      "sim_kategorija": 0.1354,
+      "skor_stari": 40.54,
+      "skor_novi": 38.96
+    },
+    {
+      "kanal": "Hannah - The Outfit Repeater",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1543,
+      "sim_kategorija": 0.2066,
+      "skor_stari": 22.62,
+      "skor_novi": 38.39
+    },
+    {
+      "kanal": "Eric Rosen",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1685,
+      "sim_kategorija": 0.1859,
+      "skor_stari": 27.56,
+      "skor_novi": 38.35
+    },
+    {
+      "kanal": "Strange Parts",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1736,
+      "sim_kategorija": 0.1771,
+      "skor_stari": 29.33,
+      "skor_novi": 38.09
+    },
+    {
+      "kanal": "Danielle Kirsty",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1743,
+      "sim_kategorija": 0.1724,
+      "skor_stari": 29.58,
+      "skor_novi": 37.42
+    },
+    {
+      "kanal": "Bekah & Co.",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1658,
+      "sim_kategorija": 0.1772,
+      "skor_stari": 26.62,
+      "skor_novi": 36.07
+    },
+    {
+      "kanal": "Hannah Harrell",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1837,
+      "sim_kategorija": 0.1507,
+      "skor_stari": 32.85,
+      "skor_novi": 35.95
+    },
+    {
+      "kanal": "Irene Rudnyk",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1392,
+      "sim_kategorija": 0.2061,
+      "skor_stari": 17.36,
+      "skor_novi": 34.35
+    },
+    {
+      "kanal": "Abbey Yung",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2025,
+      "sim_kategorija": 0.1131,
+      "skor_stari": 39.39,
+      "skor_novi": 34.06
+    },
+    {
+      "kanal": "Sailing La Vagabonde",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1683,
+      "sim_kategorija": 0.1621,
+      "skor_stari": 27.49,
+      "skor_novi": 33.99
+    },
+    {
+      "kanal": "Emma Chamberlain",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.1815,
+      "sim_kategorija": 0.1427,
+      "skor_stari": 32.08,
+      "skor_novi": 33.93
+    },
+    {
+      "kanal": "TomKat Stitchery",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.1786,
+      "sim_kategorija": 0.1466,
+      "skor_stari": 31.07,
+      "skor_novi": 33.88
+    },
+    {
+      "kanal": "Strange Parts",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1965,
+      "sim_kategorija": 0.1207,
+      "skor_stari": 37.3,
+      "skor_novi": 33.87
+    },
+    {
+      "kanal": "REGRETLYSS",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1264,
+      "sim_kategorija": 0.2214,
+      "skor_stari": 12.91,
+      "skor_novi": 33.78
+    },
+    {
+      "kanal": "Morgan Donner",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1645,
+      "sim_kategorija": 0.1644,
+      "skor_stari": 26.17,
+      "skor_novi": 33.42
+    },
+    {
+      "kanal": "Primink",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2128,
+      "sim_kategorija": 0.0934,
+      "skor_stari": 42.97,
+      "skor_novi": 33.19
+    },
+    {
+      "kanal": "aliyah simone",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1924,
+      "sim_kategorija": 0.1214,
+      "skor_stari": 35.87,
+      "skor_novi": 32.92
+    },
+    {
+      "kanal": "Sailing La Vagabonde",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1182,
+      "sim_kategorija": 0.2294,
+      "skor_stari": 10.06,
+      "skor_novi": 32.55
+    },
+    {
+      "kanal": "Irene Rudnyk",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1643,
+      "sim_kategorija": 0.1585,
+      "skor_stari": 26.1,
+      "skor_novi": 32.3
+    },
+    {
+      "kanal": "Dong ASMR",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1408,
+      "sim_kategorija": 0.1901,
+      "skor_stari": 17.92,
+      "skor_novi": 31.88
+    },
+    {
+      "kanal": "Dr Dray",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1837,
+      "sim_kategorija": 0.1275,
+      "skor_stari": 32.85,
+      "skor_novi": 31.76
+    },
+    {
+      "kanal": "Rachel Maksy",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1753,
+      "sim_kategorija": 0.1392,
+      "skor_stari": 29.92,
+      "skor_novi": 31.68
+    },
+    {
+      "kanal": "Carrie Dayton",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1758,
+      "sim_kategorija": 0.1348,
+      "skor_stari": 30.1,
+      "skor_novi": 31.02
+    },
+    {
+      "kanal": "Abbey Yung",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1801,
+      "sim_kategorija": 0.1285,
+      "skor_stari": 31.59,
+      "skor_novi": 31.0
+    },
+    {
+      "kanal": "Anjeez",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1711,
+      "sim_kategorija": 0.1413,
+      "skor_stari": 28.46,
+      "skor_novi": 30.96
+    },
+    {
+      "kanal": "The Bite Shot",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1651,
+      "sim_kategorija": 0.1495,
+      "skor_stari": 26.37,
+      "skor_novi": 30.88
+    },
+    {
+      "kanal": "THE WADS",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1326,
+      "sim_kategorija": 0.1952,
+      "skor_stari": 15.07,
+      "skor_novi": 30.66
+    },
+    {
+      "kanal": "Ellen Fisher",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.2063,
+      "sim_kategorija": 0.0827,
+      "skor_stari": 40.71,
+      "skor_novi": 30.53
+    },
+    {
+      "kanal": "Doctor Mike",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1744,
+      "sim_kategorija": 0.1311,
+      "skor_stari": 29.61,
+      "skor_novi": 29.98
+    },
+    {
+      "kanal": "KianAndJc",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1646,
+      "sim_kategorija": 0.1428,
+      "skor_stari": 26.2,
+      "skor_novi": 29.54
+    },
+    {
+      "kanal": "Jazza",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1559,
+      "sim_kategorija": 0.1531,
+      "skor_stari": 23.17,
+      "skor_novi": 29.13
+    },
+    {
+      "kanal": "Hazel Goddesss",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.2007,
+      "sim_kategorija": 0.0824,
+      "skor_stari": 38.76,
+      "skor_novi": 29.07
+    },
+    {
+      "kanal": "Anjeez",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1813,
+      "sim_kategorija": 0.115,
+      "skor_stari": 32.01,
+      "skor_novi": 28.87
+    },
+    {
+      "kanal": "KianAndJc",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.136,
+      "sim_kategorija": 0.1779,
+      "skor_stari": 16.25,
+      "skor_novi": 28.42
+    },
+    {
+      "kanal": "Eric Rosen",
+      "brend": "Audible",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.1517,
+      "sim_kategorija": 0.1532,
+      "skor_stari": 21.71,
+      "skor_novi": 28.05
+    },
+    {
+      "kanal": "REGRETLYSS",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.1534,
+      "sim_kategorija": 0.1478,
+      "skor_stari": 22.3,
+      "skor_novi": 27.52
+    },
+    {
+      "kanal": "TomKat Stitchery",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1403,
+      "sim_kategorija": 0.1665,
+      "skor_stari": 17.75,
+      "skor_novi": 27.48
+    },
+    {
+      "kanal": "Abbey Yung",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1941,
+      "sim_kategorija": 0.0824,
+      "skor_stari": 36.46,
+      "skor_novi": 27.34
+    },
+    {
+      "kanal": "Hannah - The Outfit Repeater",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1552,
+      "sim_kategorija": 0.1363,
+      "skor_stari": 22.93,
+      "skor_novi": 25.91
+    },
+    {
+      "kanal": "Hazel Goddesss",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1711,
+      "sim_kategorija": 0.1131,
+      "skor_stari": 28.46,
+      "skor_novi": 25.86
+    },
+    {
+      "kanal": "Kenna",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1577,
+      "sim_kategorija": 0.1299,
+      "skor_stari": 23.8,
+      "skor_novi": 25.41
+    },
+    {
+      "kanal": "Doctor Mike",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1249,
+      "sim_kategorija": 0.1769,
+      "skor_stari": 12.39,
+      "skor_novi": 25.34
+    },
+    {
+      "kanal": "THE WADS",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.0893,
+      "sim_kategorija": 0.2359,
+      "skor_stari": 0.0,
+      "skor_novi": 25.0
+    },
+    {
+      "kanal": "Plant Based Bride",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1841,
+      "sim_kategorija": 0.0824,
+      "skor_stari": 32.99,
+      "skor_novi": 24.74
+    },
+    {
+      "kanal": "REGRETLYSS",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1339,
+      "sim_kategorija": 0.16,
+      "skor_stari": 15.52,
+      "skor_novi": 24.64
+    },
+    {
+      "kanal": "Plant Based Bride",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.141,
+      "sim_kategorija": 0.1479,
+      "skor_stari": 17.99,
+      "skor_novi": 24.3
+    },
+    {
+      "kanal": "Sailing La Vagabonde",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1301,
+      "sim_kategorija": 0.1614,
+      "skor_stari": 14.2,
+      "skor_novi": 23.9
+    },
+    {
+      "kanal": "Hazel Goddesss",
+      "brend": "Audible",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1529,
+      "sim_kategorija": 0.1285,
+      "skor_stari": 22.13,
+      "skor_novi": 23.9
+    },
+    {
+      "kanal": "Primink",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.1535,
+      "sim_kategorija": 0.1275,
+      "skor_stari": 22.34,
+      "skor_novi": 23.88
+    },
+    {
+      "kanal": "Bekah & Co.",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.179,
+      "sim_kategorija": 0.0898,
+      "skor_stari": 31.21,
+      "skor_novi": 23.71
+    },
+    {
+      "kanal": "Danielle Kirsty",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1793,
+      "sim_kategorija": 0.0881,
+      "skor_stari": 31.32,
+      "skor_novi": 23.49
+    },
+    {
+      "kanal": "Dong ASMR",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1273,
+      "sim_kategorija": 0.1612,
+      "skor_stari": 13.22,
+      "skor_novi": 23.13
+    },
+    {
+      "kanal": "KianAndJc",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1773,
+      "sim_kategorija": 0.065,
+      "skor_stari": 30.62,
+      "skor_novi": 22.96
+    },
+    {
+      "kanal": "Emma Chamberlain",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1358,
+      "sim_kategorija": 0.1478,
+      "skor_stari": 16.18,
+      "skor_novi": 22.93
+    },
+    {
+      "kanal": "Dr Dray",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1652,
+      "sim_kategorija": 0.0999,
+      "skor_stari": 26.41,
+      "skor_novi": 21.94
+    },
+    {
+      "kanal": "THE WADS",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1215,
+      "sim_kategorija": 0.1583,
+      "skor_stari": 11.2,
+      "skor_novi": 21.09
+    },
+    {
+      "kanal": "Jazza",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1425,
+      "sim_kategorija": 0.1242,
+      "skor_stari": 18.51,
+      "skor_novi": 20.41
+    },
+    {
+      "kanal": "Plant Based Bride",
+      "brend": "Skillshare",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.1469,
+      "sim_kategorija": 0.1131,
+      "skor_stari": 20.04,
+      "skor_novi": 19.55
+    },
+    {
+      "kanal": "Abby Cox",
+      "brend": "Skillshare",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.132,
+      "sim_kategorija": 0.1338,
+      "skor_stari": 14.86,
+      "skor_novi": 19.41
+    },
+    {
+      "kanal": "Gibi ASMR",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.1415,
+      "sim_kategorija": 0.1103,
+      "skor_stari": 18.16,
+      "skor_novi": 17.63
+    },
+    {
+      "kanal": "THE WADS",
+      "brend": "ThredUp",
+      "stvarni_par": true,
+      "sim_sadrzaj": 0.1009,
+      "sim_kategorija": 0.133,
+      "skor_stari": 4.04,
+      "skor_novi": 11.15
+    },
+    {
+      "kanal": "Eric Rosen",
+      "brend": "Function of Beauty",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.0815,
+      "sim_kategorija": 0.1479,
+      "skor_stari": 0.0,
+      "skor_novi": 10.81
+    },
+    {
+      "kanal": "Dong ASMR",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.0793,
+      "sim_kategorija": 0.141,
+      "skor_stari": 0.0,
+      "skor_novi": 9.56
+    },
+    {
+      "kanal": "Eric Rosen",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.0815,
+      "sim_kategorija": 0.1276,
+      "skor_stari": 0.0,
+      "skor_novi": 7.14
+    },
+    {
+      "kanal": "Doctor Mike",
+      "brend": "ThredUp",
+      "stvarni_par": false,
+      "sim_sadrzaj": 0.0886,
+      "sim_kategorija": 0.1034,
+      "skor_stari": 0.0,
+      "skor_novi": 2.77
+    }
+  ]
+}

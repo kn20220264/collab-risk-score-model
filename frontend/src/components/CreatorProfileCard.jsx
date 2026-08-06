@@ -4,6 +4,7 @@ import {
   IconEye,
   IconShield,
   IconUser,
+  IconHeart,
   IconChat,
   IconBag,
   IconChart,
@@ -13,9 +14,9 @@ import {
 } from "./icons";
 
 const RISK_TONE = {
-  "Nizak rizik": { tone: "low", label: "Safe to Partner", color: "#16a34a" },
-  "Srednji rizik": { tone: "medium", label: "Umjeren rizik", color: "#d97706" },
-  "Visok rizik": { tone: "high", label: "Visok rizik", color: "#dc2626" },
+  "Nizak rizik": { tone: "low", label: "Safe to Partner", color: "#4ade80" },
+  "Srednji rizik": { tone: "medium", label: "Umjeren rizik", color: "#fbbf24" },
+  "Visok rizik": { tone: "high", label: "Visok rizik", color: "#f87171" },
 };
 
 function formatCompact(n) {
@@ -41,7 +42,7 @@ function ScoreRing({ score, color }) {
 
   return (
     <svg viewBox="0 0 200 200" className="profile-ring">
-      <circle cx="100" cy="100" r={r} fill="none" stroke="#e5e7eb" strokeWidth="14" />
+      <circle cx="100" cy="100" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="14" />
       <circle
         cx="100"
         cy="100"
@@ -59,9 +60,10 @@ function ScoreRing({ score, color }) {
   );
 }
 
-function StatTile({ value, label }) {
+function StatTile({ icon: Icon, value, label }) {
   return (
     <div className="stat-tile">
+      {Icon && <Icon className="stat-tile-icon" />}
       <div className="stat-tile-value">{value}</div>
       <div className="stat-tile-label">{label}</div>
     </div>
@@ -216,10 +218,10 @@ function CreatorProfileCard({ creator }) {
           </div>
 
           <div className="stat-tile-grid">
-            <StatTile value={formatCompact(creator.subscriber_count)} label="Total Reach" />
-            <StatTile value={`${creator.engagement_rate_pct}%`} label="Engagement" />
-            <StatTile value={contentAnalyzed.platforms ?? 1} label="Platforms" />
-            <StatTile value={creator.triggered_risk_flags.length} label="Risk Flags" />
+            <StatTile icon={IconUser} value={formatCompact(creator.subscriber_count)} label="Total Reach" />
+            <StatTile icon={IconHeart} value={`${creator.engagement_rate_pct}%`} label="Engagement" />
+            <StatTile icon={IconChart} value={contentAnalyzed.platforms ?? 1} label="Platforms" />
+            <StatTile icon={IconWarning} value={creator.triggered_risk_flags.length} label="Risk Flags" />
           </div>
         </div>
       </div>
